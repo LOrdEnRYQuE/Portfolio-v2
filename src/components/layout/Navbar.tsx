@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useState, useEffect, memo } from "react";
 import { usePathname } from "next/navigation";
 import { m, AnimatePresence } from "framer-motion";
-import { Menu, X, Globe } from "lucide-react";
+import { Menu, X, Globe, LogOut } from "lucide-react";
 import { siteConfig } from "@/content/site";
 import { useI18n } from "@/lib/i18n";
+import { useSession, signOut } from "next-auth/react";
 
 const BubbleEffect = memo(({ count = 12, isMobile = false }: { count?: number; isMobile?: boolean }) => (
   <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -71,6 +72,7 @@ export default function Navbar() {
   const { locale, setLocale, t } = useI18n();
   const [dynamicLinks, setDynamicLinks] = useState<{ href: string; label: string }[]>([]);
   const [brand, setBrand] = useState(siteConfig.brand);
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -103,10 +105,10 @@ export default function Navbar() {
     { href: "/demo-branches", label: t("nav.demos") },
   ];
 
-  const adminLinks = [
-    { href: "/admin", label: "Control Panel" },
+  const adminLinks = status === "authenticated" ? [
+    ...(session?.user?.role === "ADMIN" ? [{ href: "/admin", label: "Control Panel" }] : []),
     { href: "/client", label: t("nav.client_area") },
-  ];
+  ] : [];
 
   const allLinks = [...systemLinks, ...dynamicLinks, ...adminLinks];
 
@@ -174,6 +176,15 @@ export default function Navbar() {
               >
                 {t("nav.start_project")}
               </Link>
+              {status === "authenticated" && (
+                <button
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="p-2 text-text-secondary hover:text-white transition-colors duration-200 ml-2"
+                  title="Logout"
+                >
+                  <LogOut size={20} />
+                </button>
+              )}
             </div>
 
             <button
@@ -243,6 +254,17 @@ export default function Navbar() {
                   >
                     {t("nav.start_project")}
                   </Link>
+                  {status === "authenticated" && (
+                    <button
+                      onClick={() => {
+                        setMobileOpen(false);
+                        signOut({ callbackUrl: "/" });
+                      }}
+                      className="rounded-full border border-white/10 px-5 py-2.5 text-sm font-medium text-text-secondary text-center hover:bg-white/5 transition-colors flex justify-center items-center gap-2"
+                    >
+                      <LogOut size={16} /> Logout
+                    </button>
+                  )}
                 </div>
               </div>
             </m.div>
