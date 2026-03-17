@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
 
@@ -14,7 +14,7 @@ export async function POST(
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
     const { note } = await req.json();
 
     console.log(`Contact initialization protocol for lead ${id}. Insight digest: ${note}`);
