@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "DATABASE_URL=\"file:./dev.db\" next build",
+    "build": "DATABASE_URL=\"file:./dev.db\" npx prisma db push --accept-data-loss && DATABASE_URL=\"file:./dev.db\" next build",
     "start": "next start",
     "lint": "eslint"
   },
