@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
+import { Id } from "../../../../../convex/_generated/dataModel";
 import bcrypt from "bcryptjs";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions);
@@ -15,8 +19,8 @@ export async function PATCH(req: Request) {
     const body = await req.json();
     const { name, email, password, image } = body;
 
-    const currentUser = await prisma.user.findUnique({
-      where: { email: session.user.email! }
+    const currentUser = await convex.query(api.users.getUserByEmail, {
+      email: session.user.email!
     });
 
     if (!currentUser) {
@@ -31,14 +35,18 @@ export async function PATCH(req: Request) {
       updateData.password = await bcrypt.hash(password, 10);
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id: currentUser.id },
-      data: updateData
+    await convex.mutation(api.users.updateUser, {
+      id: currentUser._id as Id<"users">,
+      name: updateData.name,
+      role: undefined,
+      image: updateData.image,
     });
 
+    // Re-fetch updated user
+    const updatedUser = await convex.query(api.users.getUserById, { id: currentUser._id });
+
     // Remove password from response
-    const { password: passwordHash, ...userWithoutPassword } = updatedUser;
-    console.log("Password hash extracted and discarded:", !!passwordHash);
+    const { password: _pw, ...userWithoutPassword } = updatedUser || {};
 
     return NextResponse.json(userWithoutPassword);
   } catch (error) {

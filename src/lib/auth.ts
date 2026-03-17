@@ -1,8 +1,10 @@
 import { NextAuthOptions, DefaultSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../convex/_generated/api";
 import bcrypt from "bcryptjs";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 interface CustomUser {
   id: string;
@@ -28,7 +30,6 @@ declare module "next-auth/jwt" {
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -43,10 +44,8 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
-          }
+        const user = await convex.query(api.users.getUserByEmail, {
+          email: credentials.email
         });
 
         if (!user || !user.password) {
@@ -65,7 +64,13 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
-        return user as any; // Cast to any here is fine for authorize return
+        return {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          role: user.role,
+        } as any;
       }
     })
   ],

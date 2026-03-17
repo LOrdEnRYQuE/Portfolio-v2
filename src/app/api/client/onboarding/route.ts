@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
+import { Id } from "../../../../../convex/_generated/dataModel";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET() {
   try {
@@ -11,10 +15,7 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { onboardingData: true },
-    });
+    const user = await convex.query(api.users.getUserById, { id: session.user.id as Id<"users"> });
 
     return NextResponse.json(JSON.parse(user?.onboardingData || "{}"));
   } catch (error) {
@@ -33,11 +34,9 @@ export async function POST(req: Request) {
 
     const data = await req.json();
 
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        onboardingData: JSON.stringify(data),
-      },
+    await convex.mutation(api.users.updateOnboardingData, {
+      id: session.user.id as Id<"users">,
+      onboardingData: JSON.stringify(data),
     });
 
     return NextResponse.json({ success: true });

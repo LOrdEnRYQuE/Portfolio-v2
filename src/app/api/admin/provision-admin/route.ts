@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
+import { Id } from "../../../../../convex/_generated/dataModel";
 import bcrypt from "bcryptjs";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET() {
   try {
@@ -8,32 +12,26 @@ export async function GET() {
     const password = 'admin_password_2026';
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.upsert({
-      where: { email },
-      update: {
-        password: hashedPassword,
-        role: 'ADMIN',
-        name: 'System Admin'
-      },
-      create: {
-        email,
-        password: hashedPassword,
-        role: 'ADMIN',
-        name: 'System Admin'
-      }
+    const userId = await convex.mutation(api.users.upsertUser, {
+      email,
+      password: hashedPassword,
+      role: 'ADMIN',
+      name: 'System Admin'
     });
 
+    const user = await convex.query(api.users.getUserById, { id: userId as Id<"users"> });
+
     // Self-test hash
-    const isTestMatch = await bcrypt.compare(password, user.password!);
+    const isTestMatch = await bcrypt.compare(password, user?.password || "");
 
     return NextResponse.json({
       message: "Admin user provisioned successfully",
-      email: user.email,
-      role: user.role,
+      email: user?.email,
+      role: user?.role,
       diagnostics: {
-        hashValid: !!user.password,
+        hashValid: !!user?.password,
         testMatch: isTestMatch,
-        userId: user.id
+        userId: userId
       }
     });
   } catch (error: unknown) {

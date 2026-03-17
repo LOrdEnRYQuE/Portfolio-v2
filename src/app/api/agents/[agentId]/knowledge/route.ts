@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { PDFParse } from "pdf-parse";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../../convex/_generated/api";
+import { Id } from "../../../../../../convex/_generated/dataModel";
+// @ts-ignore
+import PDFParse from "pdf-parse";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(
   req: Request,
@@ -10,36 +15,27 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { agentId } = await params;
 
-    const agent = await prisma.agent.findUnique({
-      where: {
-        id: agentId,
-        user: { email: session.user.email }
-      },
-      include: {
-        knowledge: {
-          orderBy: { createdAt: 'desc' },
-          select: {
-            id: true,
-            fileName: true,
-            type: true,
-            content: true,
-            createdAt: true
-          }
-        }
-      }
+    // Verify ownership
+    const agent = await convex.query(api.agents.getByUserAndId, {
+      id: agentId as Id<"agents">,
+      userId: session.user.id as Id<"users">
     });
 
     if (!agent) {
       return NextResponse.json({ error: "Agent not found" }, { status: 404 });
     }
 
-    return NextResponse.json(agent.knowledge);
+    const knowledge = await convex.query(api.agentKnowledge.listByAgent, {
+      agentId: agentId as Id<"agents">
+    });
+
+    return NextResponse.json(knowledge);
   } catch (error) {
     console.error("[KNOWLEDGE_GET]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -52,18 +48,16 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { agentId } = await params;
 
     // Verify ownership
-    const agent = await prisma.agent.findUnique({
-      where: {
-        id: agentId,
-        user: { email: session.user.email }
-      }
+    const agent = await convex.query(api.agents.getByUserAndId, {
+      id: agentId as Id<"agents">,
+      userId: session.user.id as Id<"users">
     });
 
     if (!agent) {
@@ -81,36 +75,20 @@ export async function POST(
     let extractedContent = "";
 
     if (file.name.endsWith(".pdf")) {
-      const parser = new PDFParse({ data: buffer });
-      const result = await parser.getText();
+      const result = await PDFParse(buffer);
       extractedContent = result.text;
-      await parser.destroy();
     } else {
       extractedContent = buffer.toString("utf-8");
     }
 
-    const doc = await prisma.agentKnowledgeDocument.create({
-      data: {
-        agentId,
-        fileName: file.name,
-        type: file.name.endsWith(".pdf") ? "pdf" : "text",
-        content: extractedContent
-      }
+    const doc = await convex.mutation(api.agentKnowledge.create, {
+      agentId: agentId as Id<"agents">,
+      fileName: file.name,
+      type: file.name.endsWith(".pdf") ? "pdf" : "text",
+      content: extractedContent
     });
 
-    // Update agent lastProcessedAt
-    await prisma.agent.update({
-      where: { id: agentId },
-      data: { lastProcessedAt: new Date() }
-    });
-
-    return NextResponse.json({
-      id: doc.id,
-      fileName: doc.fileName,
-      type: doc.type,
-      content: doc.content,
-      createdAt: doc.createdAt
-    });
+    return NextResponse.json(doc);
   } catch (error) {
     console.error("[KNOWLEDGE_POST]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

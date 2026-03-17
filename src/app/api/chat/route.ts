@@ -1,6 +1,10 @@
 import { google } from "@ai-sdk/google";
 import { streamText } from "ai";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../convex/_generated/api";
+import { Id } from "../../../../convex/_generated/dataModel";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(req: Request) {
   try {
@@ -17,8 +21,8 @@ export async function POST(req: Request) {
     }
     
     if (agentId) {
-      const agent = await prisma.agent.findUnique({
-        where: { id: agentId }
+      const agent = await convex.query(api.agents.getById, {
+        id: agentId as Id<"agents">
       });
       if (agent) {
         systemPrompt = `You are ${agent.name}. ${agent.personality || ''}. 

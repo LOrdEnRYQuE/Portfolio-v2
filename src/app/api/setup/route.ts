@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../convex/_generated/api";
 import bcrypt from "bcryptjs";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET() {
   try {
@@ -8,9 +11,7 @@ export async function GET() {
     const password = "admin_password_2026";
     
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
+    const existingUser = await convex.query(api.users.getUserByEmail, { email });
 
     if (existingUser) {
       return NextResponse.json({ message: "User already exists" }, { status: 400 });
@@ -18,13 +19,11 @@ export async function GET() {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name: "Attila Lazar",
-        role: "ADMIN"
-      }
+    await convex.mutation(api.users.createUser, {
+      email,
+      password: hashedPassword,
+      name: "Attila Lazar",
+      role: "ADMIN"
     });
 
     return NextResponse.json({ 

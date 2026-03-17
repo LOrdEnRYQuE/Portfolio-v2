@@ -1,11 +1,9 @@
-import { prisma } from "@/lib/db";
 import BlogListing from "@/components/blog/BlogListing";
+import { fetchQuery } from "convex/nextjs";
+import { api } from "../../../convex/_generated/api";
 
 export default async function BlogPage() {
-  const posts = await prisma.post.findMany({
-    where: { published: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const posts = await fetchQuery(api.posts.getPublishedPosts);
 
   return (
     <div className="relative min-h-screen">

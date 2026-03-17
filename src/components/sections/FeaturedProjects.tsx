@@ -1,13 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { projects } from "@/content/projects";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ArrowRight, Github, ExternalLink } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 interface FeaturedProjectsProps {
   title?: string;
@@ -16,7 +17,8 @@ interface FeaturedProjectsProps {
 
 export default function FeaturedProjects({ title, subtitle }: FeaturedProjectsProps) {
   const { t } = useI18n();
-  const featured = projects.filter((p) => p.featured).slice(0, 3);
+  const convexProjects = useQuery(api.portfolio.getFeatured);
+  const featured = convexProjects?.slice(0, 3) || [];
 
   return (
     <section id="projects" className="py-24 px-6 md:px-10 max-w-7xl mx-auto border-t border-border">
@@ -77,7 +79,7 @@ export default function FeaturedProjects({ title, subtitle }: FeaturedProjectsPr
                     </p>
                     
                     <div className="flex flex-wrap gap-2 mb-8">
-                      {project.stack.slice(0, 4).map((tech) => (
+                      {(typeof project.stack === 'string' ? JSON.parse(project.stack) : project.stack).slice(0, 4).map((tech: string) => (
                         <Badge key={tech} variant="accent">{tech}</Badge>
                       ))}
                     </div>

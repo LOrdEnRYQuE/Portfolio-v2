@@ -24,6 +24,8 @@ import CookieConsent from "@/components/layout/CookieConsent";
 import dynamic from "next/dynamic";
 import { LazyMotion, domAnimation } from "framer-motion";
 
+import { ConvexClientProvider } from "@/components/ConvexClientProvider";
+
 const AIConcierge = dynamic(() => import("@/components/ui/AIConcierge"));
 
 export default function RootLayout({
@@ -40,12 +42,14 @@ export default function RootLayout({
         <LazyMotion features={domAnimation}>
           <I18nProvider>
             <NextAuthProvider>
-              <JSONLD />
+              <ConvexClientProvider>
+                <JSONLD />
               <Navbar />
               <main className="pt-24">{children}</main>
               <AIConcierge />
-              <Footer />
-              <CookieConsent />
+                <Footer />
+                <CookieConsent />
+              </ConvexClientProvider>
             </NextAuthProvider>
           </I18nProvider>
         </LazyMotion>

@@ -1,20 +1,23 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 // GET /api/admin/settings - Get all global settings
 export async function GET() {
   try {
-    const settings = await prisma.siteConfig.findMany();
+    const settings = await convex.query(api.siteConfig.listAll);
     // Convert array to key-value object
-    const config = settings.reduce((acc, curr) => ({
+    const config = settings.reduce((acc: Record<string, string>, curr: { key: string; value: string }) => ({
       ...acc,
       [curr.key]: curr.value
     }), {});
     
     return NextResponse.json(config);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to fetch settings" }, { status: 500 });
   }
 }
@@ -31,10 +34,9 @@ export async function POST(req: Request) {
     
     // Perform bulk updates/creates
     const promises = Object.entries(data).map(([key, value]) => {
-      return prisma.siteConfig.upsert({
-        where: { key },
-        update: { value: String(value) },
-        create: { key, value: String(value) }
+      return convex.mutation(api.siteConfig.upsert, {
+        key,
+        value: String(value)
       });
     });
 

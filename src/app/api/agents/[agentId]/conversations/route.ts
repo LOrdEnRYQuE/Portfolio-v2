@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../../convex/_generated/api";
+import { Id } from "../../../../../../convex/_generated/dataModel";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(
   req: Request,
@@ -9,36 +13,24 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { agentId } = await params;
 
     // Verify agent ownership
-    const agent = await prisma.agent.findUnique({
-      where: {
-        id: agentId,
-        user: { email: session.user.email }
-      }
+    const agent = await convex.query(api.agents.getByUserAndId, {
+      id: agentId as Id<"agents">,
+      userId: session.user.id as Id<"users">
     });
 
     if (!agent) {
       return NextResponse.json({ error: "Agent not found" }, { status: 404 });
     }
 
-    const conversations = await prisma.agentConversation.findMany({
-      where: {
-        agentId: agentId
-      },
-      include: {
-        _count: {
-          select: { messages: true }
-        }
-      },
-      orderBy: {
-        updatedAt: 'desc'
-      }
+    const conversations = await convex.query(api.conversations.listByAgent, {
+      agentId: agentId as Id<"agents">
     });
 
     return NextResponse.json(conversations);

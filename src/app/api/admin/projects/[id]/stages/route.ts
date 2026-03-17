@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../../../convex/_generated/api";
+import { Id } from "../../../../../../../convex/_generated/dataModel";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 // POST /api/admin/projects/[id]/stages
 export async function POST(
@@ -19,22 +23,16 @@ export async function POST(
     const body = await req.json();
     const { title, description, status, order } = body;
 
-    const lastStage = await prisma.stage.findFirst({
-      where: { projectId },
-      orderBy: { order: "desc" }
+    const stageId = await convex.mutation(api.internalProjects.createStage, {
+      projectId: projectId as Id<"projects">,
+      title,
+      description,
+      status,
+      order,
     });
 
-    const stage = await prisma.stage.create({
-      data: {
-        title: title || "New Stage",
-        description: description || "Description of the new stage",
-        status: status || "UPCOMING",
-        order: order !== undefined ? order : (lastStage ? lastStage.order + 1 : 0),
-        projectId
-      }
-    });
-
-    return NextResponse.json(stage);
+    // In a real app we might want to fetch the created stage but for now we just return the ID
+    return NextResponse.json({ id: stageId, ...body });
   } catch (error) {
     console.error("[STAGES_POST]", error);
     return new NextResponse("Internal Error", { status: 500 });

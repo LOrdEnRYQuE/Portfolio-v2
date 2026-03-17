@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
@@ -18,73 +21,63 @@ export async function GET(request: Request) {
 
   try {
     const [agents, projects, assets, leads] = await Promise.all([
-      prisma.agent.findMany({
-        where: {
-          OR: [
-            { name: { contains: query } },
-            { description: { contains: query } },
-          ],
-        },
-        take: 5,
-        select: { id: true, name: true, description: true },
-      }),
-      prisma.project.findMany({
-        where: {
-          OR: [
-            { title: { contains: query } },
-            { description: { contains: query } },
-          ],
-        },
-        take: 5,
-        select: { id: true, title: true },
-      }),
-      prisma.asset.findMany({
-        where: {
-          title: { contains: query },
-        },
-        take: 5,
-        select: { id: true, title: true, type: true },
-      }),
-      prisma.lead.findMany({
-        where: {
-          OR: [
-            { name: { contains: query } },
-            { email: { contains: query } },
-            { industry: { contains: query } },
-          ],
-        },
-        take: 5,
-        select: { id: true, name: true, industry: true },
-      }),
+      convex.query(api.agents.listAll),
+      convex.query(api.internalProjects.listAll),
+      convex.query(api.assets.listAll),
+      convex.query(api.leads.listAll),
     ]);
 
+    const q = query.toLowerCase();
+
+    const filteredAgents = agents
+      .filter((a: { name: string; description?: string }) =>
+        a.name.toLowerCase().includes(q) || (a.description || "").toLowerCase().includes(q)
+      )
+      .slice(0, 5);
+
+    const filteredProjects = projects
+      .filter((p: { title: string; description?: string }) =>
+        p.title.toLowerCase().includes(q) || (p.description || "").toLowerCase().includes(q)
+      )
+      .slice(0, 5);
+
+    const filteredAssets = assets
+      .filter((a: { title: string }) => a.title.toLowerCase().includes(q))
+      .slice(0, 5);
+
+    const filteredLeads = leads
+      .filter((l: { name: string; email: string; industry: string }) =>
+        l.name.toLowerCase().includes(q) || l.email.toLowerCase().includes(q) || l.industry.toLowerCase().includes(q)
+      )
+      .slice(0, 5);
+
     const results = [
-      ...agents.map((a: { id: string; name: string; description: string | null }) => ({
-        id: `agent-${a.id}`,
+      ...filteredAgents.map((a: { _id: string; name: string; description?: string }) => ({
+        id: `agent-${a._id}`,
         title: a.name,
         subtitle: a.description || "Active Agent",
         type: "Agent",
-        href: `/admin/agents/${a.id}/edit`,
+        href: `/admin/agents/${a._id}/edit`,
         category: "Command",
       })),
-      ...projects.map((p: { id: string; title: string }) => ({
-        id: `project-${p.id}`,
+      ...filteredProjects.map((p: { _id: string; title: string }) => ({
+        id: `project-${p._id}`,
         title: p.title,
         subtitle: "Project Command",
         type: "Project",
-        href: `/admin/projects/${p.id}`,
+        href: `/admin/projects/${p._id}`,
         category: "Content",
       })),
-      ...assets.map((as: { id: string; title: string; type: string }) => ({
-        id: `asset-${as.id}`,
+      ...filteredAssets.map((as: { _id: string; title: string; type: string }) => ({
+        id: `asset-${as._id}`,
         title: as.title,
         subtitle: `${as.type} Asset`,
         type: "Asset",
         href: `/admin/media`,
         category: "Content",
       })),
-      ...leads.map((l: { id: string; name: string; industry: string }) => ({
-        id: `lead-${l.id}`,
+      ...filteredLeads.map((l: { _id: string; name: string; industry: string }) => ({
+        id: `lead-${l._id}`,
         title: l.name,
         subtitle: l.industry || "Individual Lead",
         type: "Lead",

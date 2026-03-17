@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
+import { Id } from "../../../../convex/_generated/dataModel";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Zap, 
@@ -19,50 +22,16 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/Button";
 
-interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  concept: string;
-  industry: string;
-  description: string | null;
-  features: string;
-  timeline: string | null;
-  stack: string | null;
-  status: string;
-  createdAt: string;
-}
-
 export default function LeadHub() {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
+  const leads = useQuery(api.leads.listAll) || [];
+  const updateStatusManual = useMutation(api.leads.update);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [contactNote, setContactNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchLeads = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/leads");
-      if (res.ok) {
-        const data = await res.json();
-        setLeads(data);
-        if (selectedLead) {
-          const updatedSelected = data.find((l: Lead) => l.id === selectedLead.id);
-          if (updatedSelected) setSelectedLead(updatedSelected);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to fetch leads", e);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedLead]);
-
-  useEffect(() => {
-    fetchLeads();
-  }, [fetchLeads]);
+  const selectedLead = leads.find(l => l._id === selectedId) || null;
 
   const handleInitializeContact = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,17 +39,12 @@ export default function LeadHub() {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`/api/admin/leads/${selectedLead.id}/contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note: contactNote }),
+      await updateStatusManual({
+        id: selectedLead._id as Id<"leads">,
+        status: "CONTACTED"
       });
-
-      if (res.ok) {
-        await fetchLeads();
-        setIsContactModalOpen(false);
-        setContactNote("");
-      }
+      setIsContactModalOpen(false);
+      setContactNote("");
     } catch (e) {
       console.error("Contact initialization failed", e);
     } finally {
@@ -90,19 +54,10 @@ export default function LeadHub() {
 
   const handleStatusUpdate = async (id: string, newStatus: string) => {
     try {
-      const res = await fetch(`/api/admin/leads/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+      await updateStatusManual({
+        id: id as Id<"leads">,
+        status: newStatus
       });
-
-      if (res.ok) {
-        const updatedLead = await res.json();
-        setLeads(prev => prev.map(l => l.id === id ? updatedLead : l));
-        if (selectedLead?.id === id) {
-          setSelectedLead(updatedLead);
-        }
-      }
     } catch (e) {
       console.error("Failed to update lead status", e);
     }
@@ -157,7 +112,7 @@ export default function LeadHub() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
-          {loading ? (
+          {!leads.length && !searchTerm ? (
             <div className="p-12 text-center text-white/20 font-black tracking-widest uppercase animate-pulse">
               Scanning Neural Flux...
             </div>
@@ -169,10 +124,10 @@ export default function LeadHub() {
           ) : (
             filteredLeads.map((lead) => (
               <motion.div
-                key={lead.id}
-                layoutId={lead.id}
-                onClick={() => setSelectedLead(lead)}
-                className={`glass-card p-6 rounded-[24px] border-white/5 cursor-pointer group hover:bg-white/2 hover:border-accent/30 transition-all flex items-center gap-6 ${selectedLead?.id === lead.id ? 'border-accent/40 bg-accent/5' : ''}`}
+                key={lead._id}
+                layoutId={lead._id}
+                onClick={() => setSelectedId(lead._id)}
+                className={`glass-card p-6 rounded-[24px] border-white/5 cursor-pointer group hover:bg-white/2 hover:border-accent/30 transition-all flex items-center gap-6 ${selectedLead?._id === lead._id ? 'border-accent/40 bg-accent/5' : ''}`}
               >
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all ${getStatusColor(lead.status)}`}>
                   <Layers size={20} />
@@ -181,7 +136,7 @@ export default function LeadHub() {
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="font-black text-sm uppercase truncate group-hover:text-accent transition-colors">{lead.concept}</h3>
                     <span className="text-[8px] font-black tracking-tighter text-white/20">
-                      {formatDistanceToNow(new Date(lead.createdAt))} ago
+                      {formatDistanceToNow(new Date(lead._creationTime))} ago
                     </span>
                   </div>
                   <div className="flex items-center gap-4">
@@ -199,7 +154,7 @@ export default function LeadHub() {
         <AnimatePresence mode="wait">
           {selectedLead ? (
             <motion.div
-              key={selectedLead.id}
+              key={selectedLead._id}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -214,14 +169,14 @@ export default function LeadHub() {
                 </div>
                 <div className="flex gap-2">
                   <button 
-                    onClick={() => handleStatusUpdate(selectedLead.id, "CONTACTED")}
+                    onClick={() => handleStatusUpdate(selectedLead._id, "CONTACTED")}
                     className={`p-3 border rounded-2xl transition-all ${selectedLead.status === "CONTACTED" ? 'bg-emerald-400/20 border-emerald-400 text-emerald-400' : 'bg-white/5 border-white/5 text-white/40 hover:text-white'}`}
                     title="Mark as Contacted"
                   >
                     <Mail size={18} />
                   </button>
                   <button 
-                    onClick={() => handleStatusUpdate(selectedLead.id, "ARCHIVED")}
+                    onClick={() => handleStatusUpdate(selectedLead._id, "ARCHIVED")}
                     className={`p-3 border rounded-2xl transition-all ${selectedLead.status === "ARCHIVED" ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/5 text-white/40 hover:text-white'}`}
                     title="Archive Lead"
                   >

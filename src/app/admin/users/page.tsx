@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ShieldCheck, 
@@ -16,21 +16,18 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/Button";
-
-interface User {
-  id: string;
-  name: string | null;
-  email: string | null;
-  role: string;
-  createdAt: string;
-  image: string | null;
-}
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
+import { Id } from "../../../../convex/_generated/dataModel";
 
 export default function UserFleet() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const users = useQuery(api.users.listUsers);
+  const createUser = useMutation(api.users.createUser);
+  const updateUser = useMutation(api.users.updateUser);
+  const removeUser = useMutation(api.users.remove);
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userFormData, setUserFormData] = useState({
@@ -41,31 +38,14 @@ export default function UserFleet() {
   });
   const [formError, setFormError] = useState<string | null>(null);
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/admin/users");
-      if (res.ok) {
-        const data = await res.json();
-        setUsers(data);
-      }
-    } catch (e) {
-      console.error("Failed to fetch users", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setFormError(null);
 
     try {
+      // Note: In a real app, you'd hash this on the server or use a more secure method
+      // For this migration, we're mimicking the previous behavior
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,7 +53,6 @@ export default function UserFleet() {
       });
 
       if (res.ok) {
-        await fetchUsers();
         setIsAddUserOpen(false);
         setUserFormData({ name: "", email: "", password: "", role: "CLIENT" });
       } else {
@@ -87,42 +66,30 @@ export default function UserFleet() {
     }
   };
 
-  const handleUpdateRole = async (id: string, newRole: string) => {
+  const handleUpdateRole = async (id: Id<"users">, newRole: string) => {
     try {
-      const res = await fetch(`/api/admin/users/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: newRole }),
-      });
-
-      if (res.ok) {
-        const updatedUser = await res.json();
-        setUsers(prev => prev.map(u => u.id === id ? updatedUser : u));
-        if (selectedUser?.id === id) setSelectedUser(updatedUser);
+      await updateUser({ id, role: newRole });
+      if (selectedUser?._id === id) {
+        setSelectedUser({ ...selectedUser, role: newRole });
       }
     } catch (e) {
       console.error("Failed to update role", e);
     }
   };
 
-  const handleDeleteUser = async (id: string) => {
+  const handleDeleteUser = async (id: Id<"users">) => {
     if (!confirm("Confirm complete node deauthorization? This cannot be reversed.")) return;
 
     try {
-      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setUsers(prev => prev.filter(u => u.id !== id));
-        setSelectedUser(null);
-      } else {
-         const data = await res.json();
-         alert(data.error || "Deauthorization failed");
-      }
+      await removeUser({ id });
+      setSelectedUser(null);
     } catch (e) {
       console.error("Failed to delete user", e);
+      alert("Deauthorization failed");
     }
   };
 
-  const filteredUsers = users.filter(u => 
+  const filteredUsers = (users || []).filter(u => 
     u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -175,14 +142,20 @@ export default function UserFleet() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {loading && users.length === 0 ? (
+              {!users ? (
                 <tr>
                    <td colSpan={5} className="py-20 text-center text-white/20 font-black uppercase tracking-widest text-[10px] animate-pulse">
                       Scanning Personnel Substrate...
                    </td>
                 </tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                   <td colSpan={5} className="py-20 text-center text-white/20 font-black uppercase tracking-widest text-[10px]">
+                      No personnel nodes detected
+                   </td>
+                </tr>
               ) : filteredUsers.map((u) => (
-                <tr key={u.id} className="group hover:bg-white/1 transition-all cursor-pointer" onClick={() => setSelectedUser(u)}>
+                <tr key={u._id} className="group hover:bg-white/1 transition-all cursor-pointer" onClick={() => setSelectedUser(u)}>
                   <td className="px-10 py-6">
                     <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/20 group-hover:border-accent/30 group-hover:text-accent transition-all mx-auto">
                       <UserIcon size={18} />
@@ -202,7 +175,7 @@ export default function UserFleet() {
                     </div>
                   </td>
                   <td className="px-10 py-6">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20">{format(new Date(u.createdAt), "MMM dd, yyyy")}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20">{format(new Date(u._creationTime), "MMM dd, yyyy")}</p>
                   </td>
                   <td className="px-10 py-6 text-right">
                     <button className="p-2 text-white/10 hover:text-white transition-colors">
@@ -256,7 +229,7 @@ export default function UserFleet() {
                     </div>
                     <div className="p-6 bg-white/5 rounded-3xl border border-white/5 space-y-2">
                        <p className="text-[9px] font-black uppercase tracking-widest text-white/20">Operational Since</p>
-                       <p className="text-xl font-black">{format(new Date(selectedUser.createdAt), "yyyy.MM.dd")}</p>
+                       <p className="text-xl font-black">{format(new Date(selectedUser._creationTime), "yyyy.MM.dd")}</p>
                     </div>
                  </div>
 
@@ -274,13 +247,13 @@ export default function UserFleet() {
 
                   <div className="pt-6 flex gap-4">
                     <button 
-                      onClick={() => handleUpdateRole(selectedUser.id, selectedUser.role === "ADMIN" ? "CLIENT" : "ADMIN")}
+                      onClick={() => handleUpdateRole(selectedUser._id, selectedUser.role === "ADMIN" ? "CLIENT" : "ADMIN")}
                       className="flex-1 bg-white/5 border border-white/10 text-white/60 font-black uppercase tracking-[0.2em] py-5 rounded-2xl text-[11px] hover:bg-white/10 hover:text-white transition-all"
                     >
                        Modify Rank to {selectedUser.role === "ADMIN" ? "CLIENT" : "ADMIN"}
                     </button>
                     <button 
-                      onClick={() => handleDeleteUser(selectedUser.id)}
+                      onClick={() => handleDeleteUser(selectedUser._id)}
                       className="flex-1 bg-red-500/10 border border-red-500/20 text-red-500 font-black uppercase tracking-[0.2em] py-5 rounded-2xl text-[11px] hover:bg-red-500/20 transition-all focus:outline-none"
                     >
                        Deauthorize Node

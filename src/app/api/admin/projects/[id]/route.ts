@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../../convex/_generated/api";
+import { Id } from "../../../../../../convex/_generated/dataModel";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 // GET /api/admin/projects/[id]
 export async function GET(
@@ -16,13 +20,8 @@ export async function GET(
   const { id } = await params;
 
   try {
-    const project = await prisma.project.findUnique({
-      where: { id },
-      include: {
-        stages: { orderBy: { order: "asc" } },
-        documents: true,
-        user: { select: { name: true, email: true } }
-      }
+    const project = await convex.query(api.internalProjects.getById, { 
+      id: id as Id<"projects"> 
     });
 
     if (!project) {
@@ -50,9 +49,13 @@ export async function PATCH(
 
   try {
     const body = await req.json();
-    const project = await prisma.project.update({
-      where: { id },
-      data: body
+    await convex.mutation(api.internalProjects.update, {
+      id: id as Id<"projects">,
+      ...body
+    });
+
+    const project = await convex.query(api.internalProjects.getById, { 
+      id: id as Id<"projects"> 
     });
 
     return NextResponse.json(project);
@@ -75,8 +78,8 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    await prisma.project.delete({
-      where: { id }
+    await convex.mutation(api.internalProjects.remove, { 
+      id: id as Id<"projects"> 
     });
 
     return new NextResponse(null, { status: 204 });

@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -10,9 +13,7 @@ export async function GET() {
   }
 
   try {
-    const posts = await prisma.post.findMany({
-      orderBy: { createdAt: "desc" }
-    });
+    const posts = await convex.query(api.posts.listAll);
     return NextResponse.json(posts);
   } catch (error) {
     console.error("[ADMIN_POSTS_GET]", error);
@@ -35,24 +36,20 @@ export async function POST(req: Request) {
     }
 
     // Check if slug is unique
-    const existingPost = await prisma.post.findUnique({
-      where: { slug }
-    });
+    const existingPost = await convex.query(api.posts.getPostBySlug, { slug });
 
     if (existingPost) {
       return new NextResponse("Slug already exists", { status: 400 });
     }
 
-    const post = await prisma.post.create({
-      data: {
-        title,
-        slug,
-        excerpt,
-        content,
-        image,
-        published: published ?? false,
-        tags: JSON.stringify(tags || []),
-      }
+    const post = await convex.mutation(api.posts.create, {
+      title,
+      slug,
+      excerpt,
+      content,
+      image,
+      published: published ?? false,
+      tags: JSON.stringify(tags || []),
     });
 
     return NextResponse.json(post);

@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { siteConfig } from "@/content/site";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../convex/_generated/api";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key_for_builds");
@@ -24,26 +27,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required identity fields" }, { status: 400 });
     }
 
-    // 1. Persist to Database (Lead)
+    // 1. Persist to Database (Lead) via Convex
     let leadId = null;
     try {
-      const lead = await prisma.lead.create({
-        data: {
-          name,
-          email,
-          concept: concept || "Standard Inquiry",
-          industry: industry || "Startup",
-          description: budget ? `${description}\n\n[Budget Range]: ${budget}` : description,
-          features: features || "[]",
-          timeline,
-          stack: stack || budget, // Mapping budget to stack for storage
-          status: "NEW",
-        }
+      leadId = await convex.mutation(api.leads.createLead, {
+        name,
+        email,
+        concept: concept || "Standard Inquiry",
+        industry: industry || "Startup",
+        description: budget ? `${description}\n\n[Budget Range]: ${budget}` : description,
+        features: features || "[]",
+        timeline,
+        stack: stack || budget,
       });
-      leadId = lead.id;
-      console.log("Lead persisted successfully:", leadId);
+      console.log("Lead persisted successfully to Convex:", leadId);
     } catch (dbError) {
-      console.error("Failed to persist lead to database:", dbError);
+      console.error("Failed to persist lead to Convex:", dbError);
     }
 
     // 2. Attempt to send email using Resend

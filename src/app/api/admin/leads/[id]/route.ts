@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../../convex/_generated/api";
+import { Id } from "../../../../../../convex/_generated/dataModel";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(
   req: Request,
@@ -14,9 +18,7 @@ export async function GET(
     }
 
     const { id } = await params;
-    const lead = await prisma.lead.findUnique({
-      where: { id }
-    });
+    const lead = await convex.query(api.leads.getById, { id: id as Id<"leads"> });
 
     if (!lead) {
       return NextResponse.json({ error: "Lead not found" }, { status: 404 });
@@ -42,9 +44,9 @@ export async function PATCH(
     const { id } = await params;
     const body = await req.json();
 
-    const lead = await prisma.lead.update({
-      where: { id },
-      data: body
+    const lead = await convex.mutation(api.leads.update, {
+      id: id as Id<"leads">,
+      ...body
     });
 
     return NextResponse.json(lead);
@@ -65,9 +67,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    await prisma.lead.delete({
-      where: { id }
-    });
+    await convex.mutation(api.leads.remove, { id: id as Id<"leads"> });
 
     return NextResponse.json({ success: true });
   } catch (error) {

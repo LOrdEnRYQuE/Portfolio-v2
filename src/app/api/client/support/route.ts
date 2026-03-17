@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
+import { Id } from "../../../../../convex/_generated/dataModel";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET() {
   try {
@@ -11,9 +15,8 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const messages = await prisma.portalMessage.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: "asc" },
+    const messages = await convex.query(api.messages.listByUser, {
+      userId: session.user.id as Id<"users">
     });
 
     return NextResponse.json(messages);
@@ -37,13 +40,13 @@ export async function POST(req: Request) {
       return new NextResponse("Content is required", { status: 400 });
     }
 
-    const message = await prisma.portalMessage.create({
-      data: {
-        content,
-        role: "user",
-        userId: session.user.id,
-      },
+    const messageId = await convex.mutation(api.messages.create, {
+      content,
+      role: "user",
+      userId: session.user.id as Id<"users">,
     });
+
+    const message = { _id: messageId, content, role: "user", userId: session.user.id };
 
     return NextResponse.json(message);
   } catch (error) {

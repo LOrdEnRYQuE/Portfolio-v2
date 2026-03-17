@@ -1,8 +1,12 @@
 import { google } from "@ai-sdk/google";
 import { streamText, convertToModelMessages } from "ai";
-import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { AgentConfig } from "@/components/ui/AIConcierge";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../../convex/_generated/api";
+import { Id } from "../../../../../../convex/_generated/dataModel";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(
   req: Request,
@@ -12,22 +16,23 @@ export async function POST(
     const { messages } = await req.json();
     const { agentId } = await params;
 
-    const agent = await prisma.agent.findUnique({
-      where: { id: agentId },
-      include: {
-        knowledge: true
-      }
+    const agent = await convex.query(api.agents.getById, {
+      id: agentId as Id<"agents">
     });
 
     if (!agent) {
       return NextResponse.json({ error: "Agent not found" }, { status: 404 });
     }
 
-    const config = (agent.config as unknown) as AgentConfig;
+    const knowledge = await convex.query(api.agentKnowledge.listByAgent, {
+      agentId: agentId as Id<"agents">
+    });
+
+    const config = (agent.config ? JSON.parse(agent.config) : {}) as AgentConfig;
     const personality = agent.personality || config?.personality || "A helpful AI assistant.";
     
     // Combine knowledge from both config and documents
-    const docKnowledge = agent.knowledge.map(doc => `--- DOCUMENT: ${doc.fileName} ---\n${doc.content}`).join("\n\n");
+    const docKnowledge = knowledge.map((doc: { fileName: string; content: string }) => `--- DOCUMENT: ${doc.fileName} ---\n${doc.content}`).join("\n\n");
     const configKnowledge = config?.knowledgeBase?.join("\n") || "";
     const allKnowledge = [configKnowledge, docKnowledge].filter(Boolean).join("\n\n");
     

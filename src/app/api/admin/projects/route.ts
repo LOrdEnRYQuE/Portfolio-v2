@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
+import { Id } from "../../../../../convex/_generated/dataModel";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 // GET /api/admin/projects - Fetch all projects with stats
 export async function GET() {
@@ -11,18 +15,7 @@ export async function GET() {
   }
 
   try {
-    const projects = await prisma.project.findMany({
-      include: {
-        _count: {
-          select: { stages: true, documents: true }
-        },
-        user: {
-          select: { id: true, name: true, email: true }
-        }
-      },
-      orderBy: { updatedAt: "desc" }
-    });
-
+    const projects = await convex.query(api.internalProjects.listAll);
     return NextResponse.json(projects);
   } catch (error) {
     console.error("[PROJECTS_GET]", error);
@@ -46,33 +39,27 @@ export async function POST(req: Request) {
       return new NextResponse("Title is required", { status: 400 });
     }
 
-    // Default to current user if not provided (using email to find user if ID not in session directly)
+    // Default to current user if not provided
     if (!userId) {
-      const dbUser = await prisma.user.findFirst({
-        where: { email: session.user?.email || "" }
+      const dbUser = await convex.query(api.users.getUserByEmail, { 
+        email: session.user?.email || "" 
       });
-      userId = dbUser?.id;
+      userId = dbUser?._id;
     }
 
     if (!userId) {
       return new NextResponse("Could not determine user scope", { status: 400 });
     }
 
-    const project = await prisma.project.create({
-      data: {
-        title,
-        description,
-        status: status || "ACTIVE",
-        userId,
-        // Seed initial stages if provided or default ones
-        stages: {
-          create: [
-            { title: "Blueprint", order: 0, status: "COMPLETED" },
-            { title: "Development", order: 1, status: "IN_PROGRESS" },
-            { title: "Production", order: 2, status: "UPCOMING" }
-          ]
-        }
-      }
+    const projectId = await convex.mutation(api.internalProjects.create, {
+      title,
+      description,
+      status: status || "ACTIVE",
+      userId: userId as Id<"users">,
+    });
+
+    const project = await convex.query(api.internalProjects.getById, { 
+      id: projectId as Id<"projects"> 
     });
 
     return NextResponse.json(project);

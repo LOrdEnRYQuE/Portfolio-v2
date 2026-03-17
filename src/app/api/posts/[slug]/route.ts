@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../convex/_generated/api";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(
   req: Request,
@@ -8,9 +11,7 @@ export async function GET(
   const { slug } = await params;
 
   try {
-    const post = await prisma.post.findUnique({
-      where: { slug }
-    });
+    const post = await convex.query(api.posts.getPostBySlug, { slug });
 
     if (!post || !post.published) {
       return new NextResponse("Not Found", { status: 404 });

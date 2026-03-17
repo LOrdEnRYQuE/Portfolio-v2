@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../../convex/_generated/api";
+import { Id } from "../../../../../../convex/_generated/dataModel";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(
   req: Request,
@@ -22,12 +26,9 @@ export async function POST(
     // or add it to a notes field if it existed.
     // We'll update the status to CONTACTED if it's currently NEW.
 
-    const lead = await prisma.lead.update({
-      where: { id },
-      data: {
-        status: "CONTACTED",
-        // We could also log the contact in a separate table here
-      }
+    const lead = await convex.mutation(api.leads.update, {
+      id: id as Id<"leads">,
+      status: "CONTACTED"
     });
 
     return NextResponse.json({ 

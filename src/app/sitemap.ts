@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
-import { prisma } from "@/lib/db";
+import { fetchQuery } from "convex/nextjs";
+import { api } from "../../convex/_generated/api";
 import { siteConfig } from "@/content/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -21,39 +22,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // Dynamic Pages
-  const pages = await prisma.page.findMany({
-    where: { published: true },
-    select: { slug: true, updatedAt: true },
-  });
+  const pages = await fetchQuery(api.pages.listPublished);
 
   const pageRoutes = pages.map((page) => ({
     url: `${baseUrl}/${page.slug}`,
-    lastModified: page.updatedAt,
+    lastModified: new Date(page._creationTime),
     changeFrequency: "monthly" as const,
     priority: 0.7,
   }));
 
   // Blog Posts
-  const posts = await prisma.post.findMany({
-    where: { published: true },
-    select: { slug: true, updatedAt: true },
-  });
+  const posts = await fetchQuery(api.posts.getPublishedPosts);
 
   const postRoutes = posts.map((post) => ({
     url: `${baseUrl}/blog/${post.slug}`,
-    lastModified: post.updatedAt,
+    lastModified: new Date(post._creationTime),
     changeFrequency: "monthly" as const,
     priority: 0.6,
   }));
 
   // Portfolio Projects
-  const projects = await prisma.portfolioProject.findMany({
-    select: { slug: true, updatedAt: true },
-  });
+  const projects = await fetchQuery(api.portfolio.listAll);
 
   const projectRoutes = projects.map((project) => ({
     url: `${baseUrl}/projects/${project.slug}`,
-    lastModified: project.updatedAt,
+    lastModified: new Date(project._creationTime),
     changeFrequency: "monthly" as const,
     priority: 0.6,
   }));

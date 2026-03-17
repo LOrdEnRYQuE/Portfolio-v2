@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../../convex/_generated/api";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 // Default section configs per core page slug
 const CORE_PAGE_DEFAULTS: Record<string, { title: string; description: string; sections: object[] }> = {
@@ -176,26 +179,24 @@ export async function GET(req: Request) {
   }
 
   try {
-    // Try to find in DB; if not found, create with defaults
-    let page = await prisma.page.findUnique({ where: { slug } });
+    let page = await convex.query(api.pages.getBySlug, { slug });
 
     if (!page) {
-      page = await prisma.page.create({
-        data: {
-          slug,
-          title: defaults.title,
-          description: defaults.description,
-          content: JSON.stringify(defaults.sections),
-          published: true,
-          inNavbar: ["home", "about", "contact", "services"].includes(slug),
-          order: Object.keys(CORE_PAGE_DEFAULTS).indexOf(slug),
-        },
+      const pageId = await convex.mutation(api.pages.create, {
+        slug,
+        title: defaults.title,
+        description: defaults.description,
+        content: JSON.stringify(defaults.sections),
+        published: true,
+        inNavbar: ["home", "about", "contact", "services"].includes(slug),
+        order: Object.keys(CORE_PAGE_DEFAULTS).indexOf(slug),
       });
+      page = await convex.query(api.pages.getBySlug, { slug });
     }
 
     // Return page with parsed sections
     let sections = defaults.sections;
-    if (page.content) {
+    if (page?.content) {
       try {
         const parsed = JSON.parse(page.content);
         if (Array.isArray(parsed)) sections = parsed;
@@ -224,26 +225,17 @@ export async function PUT(req: Request) {
 
     if (!slug) return NextResponse.json({ error: "slug required" }, { status: 400 });
 
-    const page = await prisma.page.upsert({
-      where: { slug },
-      update: {
-        content: JSON.stringify(sections),
-        ...(title ? { title } : {}),
-        ...(description ? { description } : {}),
-        updatedAt: new Date(),
-      },
-      create: {
-        slug,
-        title: title || slug,
-        description: description || "",
-        content: JSON.stringify(sections),
-        published: true,
-        inNavbar: false,
-        order: 0,
-      },
+    const pageId = await convex.mutation(api.pages.upsertBySlug, {
+      slug,
+      title: title || slug,
+      description: description || "",
+      content: JSON.stringify(sections),
+      published: true,
+      inNavbar: false,
+      order: 0,
     });
 
-    return NextResponse.json({ success: true, page });
+    return NextResponse.json({ success: true, pageId });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Failed to save core page" }, { status: 500 });

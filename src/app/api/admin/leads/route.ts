@@ -2,7 +2,10 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -12,12 +15,10 @@ export async function GET() {
   }
 
   try {
-    const leads = await prisma.lead.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+    const leads = await convex.query(api.leads.listAll);
     return NextResponse.json(leads);
   } catch (error) {
-    console.error("Failed to fetch leads:", error);
+    console.error("Failed to fetch leads from Convex:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

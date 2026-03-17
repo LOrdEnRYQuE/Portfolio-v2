@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../../convex/_generated/api";
+import { Id } from "../../../../../../convex/_generated/dataModel";
 import { unlink } from "fs/promises";
 import { join } from "path";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function DELETE(
   req: Request,
@@ -17,8 +21,8 @@ export async function DELETE(
 
     const { assetId } = await params;
     
-    const asset = await prisma.asset.findUnique({
-      where: { id: assetId }
+    const asset = await convex.query(api.assets.getById, { 
+      id: assetId as Id<"assets"> 
     });
 
     if (!asset) {
@@ -33,8 +37,8 @@ export async function DELETE(
       console.warn(`Could not delete physical file: ${asset.url}`, e);
     }
 
-    await prisma.asset.delete({
-      where: { id: assetId }
+    await convex.mutation(api.assets.remove, { 
+      id: assetId as Id<"assets"> 
     });
 
     return NextResponse.json({ success: true });

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
+import { Id } from "../../../../../convex/_generated/dataModel";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET() {
   try {
@@ -11,43 +15,9 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Try to find an active project for this user
-    let project = await prisma.project.findFirst({
-      where: { userId: session.user.id },
-      include: {
-        stages: {
-          orderBy: { order: "asc" },
-        },
-      },
+    const project = await convex.mutation(api.internalProjects.getOrCreateProjectByUser, {
+      userId: session.user.id as Id<"users">
     });
-
-    // Seed a default project if none exists (for production readiness demo)
-    if (!project) {
-      project = await prisma.project.create({
-        data: {
-          title: "Premium Brand Platform",
-          description: "End-to-end digital transformation and AI integration.",
-          status: "ACTIVE",
-          health: "STABLE",
-          efficiency: 94,
-          userId: session.user.id,
-          stages: {
-            create: [
-              { title: "Discovery & Strategy", description: "Market research and technical roadmap.", status: "COMPLETED", order: 1 },
-              { title: "Architecture Design", description: "Schema definition and cloud infrastructure.", status: "COMPLETED", order: 2 },
-              { title: "Development Phase", description: "Core feature implementation and integration.", status: "IN_PROGRESS", order: 3 },
-              { title: "Quality Assurance", description: "Security audit and performance testing.", status: "UPCOMING", order: 4 },
-              { title: "Launch & Scale", description: "Deployment and global distribution.", status: "UPCOMING", order: 5 },
-            ],
-          },
-        },
-        include: {
-          stages: {
-            orderBy: { order: "asc" },
-          },
-        },
-      });
-    }
 
     return NextResponse.json(project);
   } catch (error) {

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../../convex/_generated/api";
+import { Id } from "../../../../../../convex/_generated/dataModel";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function PATCH(
   req: Request,
@@ -18,17 +22,12 @@ export async function PATCH(
     const body = await req.json();
     const { role } = body;
 
-    const user = await prisma.user.update({
-      where: { id },
-      data: { role },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true
-      }
+    await convex.mutation(api.users.updateUser, {
+      id: id as Id<"users">,
+      role
     });
+
+    const user = await convex.query(api.users.getUserById, { id: id as Id<"users"> });
 
     return NextResponse.json(user);
   } catch (error) {
@@ -55,8 +54,8 @@ export async function DELETE(
        return NextResponse.json({ error: "Self-deauthorization prohibited" }, { status: 400 });
     }
 
-    await prisma.user.delete({
-      where: { id }
+    await convex.mutation(api.users.remove, {
+      id: id as Id<"users">
     });
 
     return NextResponse.json({ success: true, message: "Personnel node purged from fleet" });

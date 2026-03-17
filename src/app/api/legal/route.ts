@@ -1,21 +1,20 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../convex/_generated/api";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET() {
   try {
-    const configs = await prisma.siteConfig.findMany({
-      where: {
-        key: {
-          startsWith: "legal_"
-        }
-      }
-    });
+    const configs = await convex.query(api.siteConfig.listAll);
     
-    // Convert array to object
-    const legalContent = configs.reduce((acc: Record<string, string>, curr: { key: string, value: string }) => {
-      acc[curr.key] = curr.value;
-      return acc;
-    }, {});
+    // Filter by prefix 'legal_' and convert array to object
+    const legalContent = configs
+      .filter(c => c.key.startsWith("legal_"))
+      .reduce((acc: Record<string, string>, curr) => {
+        acc[curr.key] = curr.value;
+        return acc;
+      }, {});
     
     return NextResponse.json(legalContent);
   } catch (error) {

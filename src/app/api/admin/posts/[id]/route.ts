@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../../convex/_generated/api";
+import { Id } from "../../../../../../convex/_generated/dataModel";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(
   req: Request,
@@ -15,9 +19,7 @@ export async function GET(
   const { id } = await props.params;
 
   try {
-    const post = await prisma.post.findUnique({
-      where: { id }
-    });
+    const post = await convex.query(api.posts.getById, { id: id as Id<"posts"> });
 
     if (!post) {
       return new NextResponse("Not Found", { status: 404 });
@@ -45,17 +47,15 @@ export async function PATCH(
     const body = await req.json();
     const { title, slug, excerpt, content, image, published, tags } = body;
 
-    const post = await prisma.post.update({
-      where: { id },
-      data: {
-        title,
-        slug,
-        excerpt,
-        content,
-        image,
-        published,
-        tags: tags ? JSON.stringify(tags) : undefined,
-      }
+    const post = await convex.mutation(api.posts.update, {
+      id: id as Id<"posts">,
+      title,
+      slug,
+      excerpt,
+      content,
+      image,
+      published,
+      tags: tags ? JSON.stringify(tags) : undefined,
     });
 
     return NextResponse.json(post);
@@ -77,11 +77,9 @@ export async function DELETE(
   const { id } = await props.params;
 
   try {
-    const post = await prisma.post.delete({
-      where: { id }
-    });
+    await convex.mutation(api.posts.remove, { id: id as Id<"posts"> });
 
-    return NextResponse.json(post);
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error("[ADMIN_POST_ID_DELETE]", error);
     return new NextResponse("Internal Error", { status: 500 });

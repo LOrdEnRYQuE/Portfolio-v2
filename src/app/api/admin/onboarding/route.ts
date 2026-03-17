@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -13,10 +16,9 @@ export async function POST(req: Request) {
   try {
     const { completed } = await req.json();
     
-    await prisma.siteConfig.upsert({
-      where: { key: "onboarding_completed" },
-      update: { value: completed ? "true" : "false" },
-      create: { key: "onboarding_completed", value: completed ? "true" : "false" },
+    await convex.mutation(api.siteConfig.upsert, {
+      key: "onboarding_completed",
+      value: completed ? "true" : "false"
     });
 
     return NextResponse.json({ success: true });

@@ -1,4 +1,5 @@
-import { prisma } from "@/lib/db";
+import { fetchQuery } from "convex/nextjs";
+import { api } from "../../../../convex/_generated/api";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { Calendar, Tag, ArrowLeft, Share2 } from "lucide-react";
@@ -12,15 +13,15 @@ interface BlogSlugPageProps {
 export default async function BlogSlugPage({ params }: BlogSlugPageProps) {
   const { slug } = await params;
 
-  const post = await prisma.post.findUnique({
-    where: { slug, published: true },
-  });
+  const post = await fetchQuery(api.posts.getPostBySlug, { slug });
 
-  if (!post) {
+  if (!post || !post.published) {
     notFound();
   }
 
-  const tags = JSON.parse(post.tags) as string[];
+  const tags = JSON.parse(post.tags || "[]") as string[];
+
+  const createdAt = post._creationTime;
 
   return (
     <article className="relative min-h-screen pb-24">
@@ -46,7 +47,7 @@ export default async function BlogSlugPage({ params }: BlogSlugPageProps) {
             <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-foreground/40">
               <div className="flex items-center gap-1.5">
                 <Calendar className="w-4 h-4" />
-                <span>{format(new Date(post.createdAt), "MMMM d, yyyy")}</span>
+                <span>{format(new Date(post._creationTime), "MMMM d, yyyy")}</span>
               </div>
               <div className="h-4 w-px bg-white/10 hidden sm:block" />
               <div className="flex items-center gap-1.5">

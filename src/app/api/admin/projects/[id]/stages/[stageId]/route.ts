@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../../../../convex/_generated/api";
+import { Id } from "../../../../../../../../convex/_generated/dataModel";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 // PATCH /api/admin/projects/[id]/stages/[stageId]
 export async function PATCH(
@@ -17,12 +21,12 @@ export async function PATCH(
 
   try {
     const body = await req.json();
-    const stage = await prisma.stage.update({
-      where: { id: stageId },
-      data: body
+    await convex.mutation(api.internalProjects.updateStage, {
+      id: stageId as Id<"stages">,
+      ...body
     });
 
-    return NextResponse.json(stage);
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[STAGE_PATCH]", error);
     return new NextResponse("Internal Error", { status: 500 });
@@ -42,8 +46,8 @@ export async function DELETE(
   const { stageId } = await params;
 
   try {
-    await prisma.stage.delete({
-      where: { id: stageId }
+    await convex.mutation(api.internalProjects.removeStage, { 
+      id: stageId as Id<"stages"> 
     });
 
     return new NextResponse(null, { status: 204 });

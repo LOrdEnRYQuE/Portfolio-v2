@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
 import { writeFile } from "fs/promises";
 import { join } from "path";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET() {
   try {
@@ -12,9 +15,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const assets = await prisma.asset.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+    const assets = await convex.query(api.assets.listAll);
 
     return NextResponse.json(assets);
   } catch (error) {
@@ -49,14 +50,12 @@ export async function POST(req: Request) {
     const type = file.type.startsWith("image/") ? "IMAGE" : 
                  file.type === "application/pdf" ? "DOCUMENT" : "DATA";
 
-    const asset = await prisma.asset.create({
-      data: {
-        title: file.name,
-        type,
-        ext: file.name.split(".").pop() || "unknown",
-        size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-        url: `/uploads/${fileName}`
-      }
+    const asset = await convex.mutation(api.assets.create, {
+      title: file.name,
+      type,
+      ext: file.name.split(".").pop() || "unknown",
+      size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+      url: `/uploads/${fileName}`
     });
 
     return NextResponse.json(asset);

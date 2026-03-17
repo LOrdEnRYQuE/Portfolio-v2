@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
+import { Id } from "../../../../../convex/_generated/dataModel";
+// Convex Migration - Ported from Prisma
 import bcrypt from "bcryptjs";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -12,17 +17,7 @@ export async function GET() {
   }
 
   try {
-    const users = await prisma.user.findMany({
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        image: true,
-        createdAt: true,
-      }
-    });
+    const users = await convex.query(api.users.listUsers);
     return NextResponse.json(users);
   } catch (error) {
     console.error("Failed to fetch users:", error);
@@ -45,9 +40,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
+    const existingUser = await convex.query(api.users.getUserByEmail, { email });
 
     if (existingUser) {
       return NextResponse.json({ error: "Personnel node already exists with this identifier" }, { status: 400 });
@@ -55,21 +48,14 @@ export async function POST(req: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: role || "CLIENT"
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true
-      }
+    const userId = await convex.mutation(api.users.createUser, {
+      name,
+      email,
+      password: hashedPassword,
+      role: role || "CLIENT"
     });
+
+    const user = await convex.query(api.users.getUserById, { id: userId as Id<"users"> });
 
     return NextResponse.json(user);
   } catch (error) {

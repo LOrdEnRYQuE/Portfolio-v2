@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../convex/_generated/api";
 import bcrypt from "bcryptjs";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(req: Request) {
   try {
@@ -10,9 +13,7 @@ export async function POST(req: Request) {
       return new NextResponse("Missing email or password", { status: 400 });
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
+    const existingUser = await convex.query(api.users.getUserByEmail, { email });
 
     if (existingUser) {
       return new NextResponse("User already exists", { status: 400 });
@@ -20,19 +21,17 @@ export async function POST(req: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-        role: "CLIENT"
-      }
+    const userId = await convex.mutation(api.users.createUser, {
+      email,
+      password: hashedPassword,
+      name,
+      role: "CLIENT"
     });
 
     return NextResponse.json({
-      id: user.id,
-      email: user.email,
-      name: user.name
+      id: userId,
+      email,
+      name
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Internal Server Error";
