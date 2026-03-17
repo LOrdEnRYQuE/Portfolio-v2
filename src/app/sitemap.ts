@@ -22,7 +22,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // Dynamic Pages
-  const pages = await fetchQuery(api.pages.listPublished);
+  const allPages = await fetchQuery(api.pages.listAll);
+  const pages = allPages.filter((page) => page.published);
 
   const pageRoutes = pages.map((page) => ({
     url: `${baseUrl}/${page.slug}`,

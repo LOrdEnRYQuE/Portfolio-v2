@@ -47,6 +47,7 @@ export async function PATCH(req: Request) {
 
     // Remove password from response
     const { password: _pw, ...userWithoutPassword } = updatedUser || {};
+    void _pw; // fix unused var warning
 
     return NextResponse.json(userWithoutPassword);
   } catch (error) {

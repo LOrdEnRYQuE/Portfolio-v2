@@ -21,8 +21,6 @@ export default async function BlogSlugPage({ params }: BlogSlugPageProps) {
 
   const tags = JSON.parse(post.tags || "[]") as string[];
 
-  const createdAt = post._creationTime;
-
   return (
     <article className="relative min-h-screen pb-24">
       {/* Neural Background Background */}
