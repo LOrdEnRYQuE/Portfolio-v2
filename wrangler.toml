@@ -1,0 +1,9 @@
+name = "portfolio"
+main = ".next/standalone/server.js"
+compatibility_date = "2025-02-01"
+compatibility_flags = ["nodejs_compat"]
+node_compat = true
+
+[assets]
+directory = ".next/static"
+binding = "ASSETS"
