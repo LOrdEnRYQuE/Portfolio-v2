@@ -3,8 +3,8 @@ import { streamText, convertToModelMessages } from "ai";
 import { NextResponse } from "next/server";
 import { AgentConfig } from "@/components/ui/AIConcierge";
 import { ConvexHttpClient } from "convex/browser";
-import { api } from "../../../../../../convex/_generated/api";
-import { Id } from "../../../../../../convex/_generated/dataModel";
+import { api } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 

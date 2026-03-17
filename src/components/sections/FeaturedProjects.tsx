@@ -8,7 +8,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ArrowRight, Github, ExternalLink } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "@convex/_generated/api";
 
 interface FeaturedProjectsProps {
   title?: string;

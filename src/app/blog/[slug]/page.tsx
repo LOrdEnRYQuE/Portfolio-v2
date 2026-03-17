@@ -1,5 +1,5 @@
 import { fetchQuery } from "convex/nextjs";
-import { api } from "../../../../convex/_generated/api";
+import { api } from "@convex/_generated/api";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { Calendar, Tag, ArrowLeft, Share2 } from "lucide-react";

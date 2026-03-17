@@ -2,10 +2,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ConvexHttpClient } from "convex/browser";
-import { api } from "../../../../../../convex/_generated/api";
-import { Id } from "../../../../../../convex/_generated/dataModel";
-// @ts-ignore
-import PDFParse from "pdf-parse/lib/pdf-parse.js";
+import { api } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
+import { PDFParse } from "pdf-parse";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
@@ -75,7 +74,8 @@ export async function POST(
     let extractedContent = "";
 
     if (file.name.endsWith(".pdf")) {
-      const result = await PDFParse(buffer);
+      const parser = new PDFParse({ data: buffer });
+      const result = await parser.getText();
       extractedContent = result.text;
     } else {
       extractedContent = buffer.toString("utf-8");

@@ -2,8 +2,8 @@ import AIConcierge from "@/components/ui/AIConcierge";
 import { notFound } from "next/navigation";
 import { AgentConfig } from "@/components/ui/AIConcierge";
 import { ConvexHttpClient } from "convex/browser";
-import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
+import { api } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 

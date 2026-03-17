@@ -1,6 +1,6 @@
 import BlogListing from "@/components/blog/BlogListing";
 import { fetchQuery } from "convex/nextjs";
-import { api } from "../../../convex/_generated/api";
+import { api } from "@convex/_generated/api";
 
 export default async function BlogPage() {
   const posts = await fetchQuery(api.posts.getPublishedPosts);
