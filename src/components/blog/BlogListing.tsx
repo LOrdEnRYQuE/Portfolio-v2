@@ -1,9 +1,10 @@
 "use client";
 import { useI18n } from "@/lib/i18n";
 import BlogCard from "./BlogCard";
+import { Id } from "@convex/_generated/dataModel";
 
-interface Post {
-  _id: string;
+interface BlogPostData {
+  _id: Id<"posts"> | string;
   _creationTime: number;
   title: string;
   slug: string;
@@ -15,7 +16,7 @@ interface Post {
 }
 
 interface BlogListingProps {
-  posts: Post[];
+  posts: BlogPostData[];
 }
 
 export default function BlogListing({ posts }: BlogListingProps) {

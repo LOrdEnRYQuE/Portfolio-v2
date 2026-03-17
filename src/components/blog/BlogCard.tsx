@@ -5,10 +5,11 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { Calendar, Tag, ArrowRight } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { Id } from "@convex/_generated/dataModel";
 
 interface BlogCardProps {
   post: {
-    _id: string;
+    _id: Id<"posts"> | string;
     title: string;
     slug: string;
     excerpt?: string;

@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { format } from "date-fns";
 
-interface Post {
+interface AdminPostData {
   _id: string;
   title: string;
   excerpt: string;
@@ -28,7 +28,7 @@ interface Post {
 }
 
 export default function AdminBlogPage() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<AdminPostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
