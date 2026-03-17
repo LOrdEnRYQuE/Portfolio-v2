@@ -8,10 +8,20 @@ const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key_for_builds
 
 export async function POST(req: Request) {
   try {
-    const { name, email, message } = await req.json();
+    const { 
+      name, 
+      email, 
+      concept, 
+      industry, 
+      description, 
+      features, 
+      timeline, 
+      budget,
+      stack 
+    } = await req.json();
 
-    if (!name || !email || !message) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!name || !email) {
+      return NextResponse.json({ error: "Missing required identity fields" }, { status: 400 });
     }
 
     // 1. Persist to Database (Lead)
@@ -21,9 +31,12 @@ export async function POST(req: Request) {
         data: {
           name,
           email,
-          concept: "Contact Form Message", // Required field in schema
-          industry: "General Inquiry",    // Required field in schema
-          description: message,
+          concept: concept || "Standard Inquiry",
+          industry: industry || "Startup",
+          description: budget ? `${description}\n\n[Budget Range]: ${budget}` : description,
+          features: features || "[]",
+          timeline,
+          stack: stack || budget, // Mapping budget to stack for storage
           status: "NEW",
         }
       });
@@ -31,24 +44,42 @@ export async function POST(req: Request) {
       console.log("Lead persisted successfully:", leadId);
     } catch (dbError) {
       console.error("Failed to persist lead to database:", dbError);
-      // We continue with email sending even if DB fails, but log the error
     }
 
     // 2. Attempt to send email using Resend
     if (!process.env.RESEND_API_KEY) {
-      console.log("No RESEND_API_KEY found. Simulation mode: Email not sent, but lead persisted if DB was up.");
+      console.log("No RESEND_API_KEY found. Simulation mode enabled.");
       return NextResponse.json({ 
         success: true, 
-        message: "Lead recorded. Email simulation active (no API key).",
+        message: "Lead recorded (Simulation).",
         leadId 
       }, { status: 200 });
     }
 
+    const emailContent = `
+Mission Briefing: New Lead Captured
+
+Identity: ${name} (${email})
+Mission: ${concept || "Direct Sync"}
+Industry: ${industry || "N/A"}
+
+Objectives/Features:
+${features ? JSON.parse(features).join(", ") : "Standard Build"}
+
+Description:
+${description || "No additional data provided."}
+
+Logistics:
+- Timeline: ${timeline || "TBD"}
+- Budget: ${budget || "TBD"}
+- Tech Stack: ${stack || "TBD"}
+    `;
+
     const { data, error } = await resend.emails.send({
       from: `${siteConfig.name} Portfolio <onboarding@resend.dev>`,
-      to: [process.env.CONTACT_EMAIL || "delivered@resend.dev"],
-      subject: `New Portfolio Message from ${name}`,
-      text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+      to: [process.env.CONTACT_EMAIL || "lordenryque.dev@gmail.com"],
+      subject: `[LEAD] ${concept || "New Sync"} - ${name}`,
+      text: emailContent,
     });
 
     if (error) {

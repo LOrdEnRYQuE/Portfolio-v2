@@ -32,7 +32,7 @@ async function main() {
       status: 'ACTIVE'
     },
     {
-      name: 'Neural Support specialized',
+      name: 'System Intelligence specialized',
       description: 'Technical support agent for the infrastructure.',
       personality: 'Precise, helpful, and technically proficient.',
       status: 'ACTIVE'
@@ -76,7 +76,7 @@ async function main() {
           { conversationId: conv.id, role: 'user', content: 'Hello, can you help me understand your design philosophy?' },
           { conversationId: conv.id, role: 'assistant', content: 'Certainly! Our design philosophy centers around high-premium aesthetics, liquid-smooth animations, and a focus on "Visual Excellence" that wows the user at first glance.' },
           { conversationId: conv.id, role: 'user', content: 'That sounds impressive. How do you implement AI?' },
-          { conversationId: conv.id, role: 'assistant', content: 'We integrate cutting-edge models like Gemini 1.5 Pro to power our "Neural Forge" generator, allowing for natural language orchestration of entire components.' }
+          { conversationId: conv.id, role: 'assistant', content: 'We integrate cutting-edge models like Gemini 1.5 Pro to power our "LOrdEnRYQuE Forge" generator, allowing for natural language orchestration of entire components.' }
         ]
       })
       console.log(`💬 Conversation seeded for ${agent.name}`)
@@ -95,7 +95,7 @@ async function main() {
       stages: {
         create: [
           { title: 'Discovery & Audit', status: 'COMPLETED', order: 1 },
-          { title: 'Neural Framework Setup', status: 'IN_PROGRESS', order: 2 },
+          { title: 'Intelligence Framework Setup', status: 'IN_PROGRESS', order: 2 },
           { title: 'UI/UX Sculpting', status: 'UPCOMING', order: 3 },
           { title: 'Final Deployment', status: 'UPCOMING', order: 4 }
         ]

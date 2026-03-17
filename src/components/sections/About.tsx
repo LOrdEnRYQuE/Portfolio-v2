@@ -5,6 +5,8 @@ import Image from "next/image";
 import { siteConfig } from "@/content/site";
 import { useI18n } from "@/lib/i18n";
 
+import { Download } from "lucide-react";
+
 export default function About() {
   const { t } = useI18n();
 
@@ -27,10 +29,21 @@ export default function About() {
           </div>
           <div className="space-y-5 text-text-secondary leading-relaxed max-w-prose text-lg">
             <p>{t("about.description")}</p>
-            <p className="text-sm font-medium text-accent-blue/60 pt-2 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent-blue animate-pulse" />
-              {t("about.based_in")} {siteConfig.location}
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-2">
+              <p className="text-sm font-medium text-accent-blue/60 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent-blue animate-pulse" />
+                {t("about.based_in")} {siteConfig.location}
+              </p>
+              
+              <a 
+                href="/documents/Attila_Lazar_Resume.pdf" 
+                download
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-blue/10 border border-accent-blue/20 text-accent-blue text-sm font-bold hover:bg-accent-blue/20 transition-colors w-fit shadow-md"
+              >
+                <Download size={16} />
+                Download Resume
+              </a>
+            </div>
           </div>
         </motion.div>
 

@@ -241,3 +241,20 @@ model PortfolioProject {
 
   @@index([slug])
 }
+
+model Page {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String?
+  content     String   @default("")
+  published   Boolean  @default(false)
+  inNavbar    Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+  @@index([published])
+}
+

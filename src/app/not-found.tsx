@@ -1,56 +1,80 @@
 "use client";
 
-import Link from "next/link";
-import { MoveLeft, HelpCircle } from "lucide-react";
-import { motion } from "framer-motion";
+
+import { m } from "framer-motion";
+import { Button } from "@/components/ui/Button";
+import { ArrowLeft, Home } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
-      {/* Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent/10 blur-[120px] rounded-full -z-10" />
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center relative overflow-hidden bg-background">
+      {/* Background elements to match the theme */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-30">
+        <m.div
+          animate={{
+            scale: [1, 1.2, 1],
+            x: [0, 50, 0],
+            y: [0, -30, 0],
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-20 -left-20 w-96 h-96 bg-accent-blue/10 rounded-full blur-[100px]"
+        />
+        <m.div
+          animate={{
+            scale: [1.2, 1, 1.2],
+            x: [0, -40, 0],
+            y: [0, 60, 0],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -bottom-20 -right-20 w-96 h-96 bg-accent-purple/10 rounded-full blur-[100px]"
+        />
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-center"
-      >
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white/5 border border-white/10 mb-8">
-          <HelpCircle size={40} className="text-accent/50" />
-        </div>
+      <div className="relative z-10 space-y-8">
+        <m.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h1 className="text-[12rem] font-black leading-none tracking-tighter text-white/5 select-none">
+            404
+          </h1>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
+              Page Lost in Orbit
+            </h2>
+          </div>
+        </m.div>
 
-        <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-4">
-          Neural <span className="text-accent underline decoration-accent/30 underline-offset-8 italic">Void</span>
-        </h1>
-        
-        <p className="text-text-secondary max-w-md mx-auto mb-12 text-sm md:text-base leading-relaxed uppercase tracking-[0.2em] font-bold">
-          The requested data segment does not exist within the current cluster or has been moved to an inaccessible sector.
-        </p>
+        <m.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="text-text-secondary text-lg max-w-md mx-auto"
+        >
+          The resource you are looking for has been moved or doesn&apos;t exist on the LOrdEnRYQuE core system.
+        </m.p>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            href="/"
-            className="group relative px-6 py-4 bg-white text-black font-black uppercase tracking-widest text-[10px] rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/10"
+        <m.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
+        >
+          <Button href="/" variant="primary" size="lg" className="rounded-2xl px-10">
+            <Home size={18} className="mr-2" />
+            Back to Home
+          </Button>
+          <Button 
+            onClick={() => window.history.back()} 
+            variant="ghost" 
+            size="lg" 
+            className="rounded-2xl px-8 text-text-secondary hover:text-text-primary"
           >
-            <span className="flex items-center gap-2">
-              <MoveLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-              Return to Hangar
-            </span>
-          </Link>
-          
-          <Link
-            href="/blog"
-            className="px-6 py-4 bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-white/10 transition-all active:scale-95"
-          >
-            Browse Insights
-          </Link>
-        </div>
-      </motion.div>
-
-      {/* Decorative Matrix Grid */}
-      <div className="absolute inset-0 pointer-events-none -z-20 opacity-20 mask-[radial-gradient(ellipse_at_center,black,transparent_70%)]">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[40px_40px]" />
+            <ArrowLeft size={18} className="mr-2" />
+            Go Back
+          </Button>
+        </m.div>
       </div>
     </div>
   );

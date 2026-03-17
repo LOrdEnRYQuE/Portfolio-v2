@@ -1,0 +1,40 @@
+PROJECT PLAN & QUICK START: demo
+
+--- Client Duties & Quick Start ---
+1. The 'Ingredients' (Assets & Copy)
+- Logo & Branding: High-resolution files (PNG, SVG, or AI).
+- The Story: Your 'About Us' text and service descriptions.
+- Imagery: Photos of your team, products, or workspace.
+- Access: Login details for your domain registrar.
+
+2. The 'Timeline' (Feedback)
+- Review Cycles: When we send a draft, try to give us the 'thumbs up' or requested changes within 3 business days.
+
+3. The 'Fuel' (Payments & Hosting)
+- Milestones: Keep an eye out for project invoices to avoid any 'work pauses.'
+- Hosting: Your site's 'home' on the internet requires a recurring payment. We'll set this up to be automatic!
+
+4. Communication
+- Stay in Touch: We'll reach out via your preferred method. If your contact info changes, just let us know!
+
+Communication Preference: PHONE
+
+--- Technical & Strategic Proposal ---
+Project Mission Plan (EN):
+--------------------
+Client: demo
+Contact Info:
+- Email: demo@example.com
+- Phone: Not provided
+- Preferred Channel: Phone Call
+Concept: 
+Industry: SaaS
+Project Types: Full MVP
+Objective: Idea Validation
+Audience: Developers/Internal
+Infrastructure: Edge & Serverless
+Description: 
+Technical Stack: SaaS Platform
+Timeline: Standard (1-3 months)
+Budget: €5k - €15k
+Agreed to Terms: Yes

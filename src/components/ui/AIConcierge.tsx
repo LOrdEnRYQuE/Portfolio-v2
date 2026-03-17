@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, ArrowRight, Zap, Bot } from "lucide-react";
+import { X, Send, ArrowRight, Bot, Trash2, Maximize2, Minimize2 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import * as LucideIcons from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 export interface AgentConfig {
   name: string;
@@ -35,9 +36,10 @@ interface AIConciergeProps {
 
 export default function AIConcierge({ config, previewMode = false, embedMode = false }: AIConciergeProps) {
   const [isOpen, setIsOpen] = useState(previewMode || embedMode);
+  const [isMaximized, setIsMaximized] = useState(embedMode);
   const { t } = useI18n();
 
-  // Default values if no config is provided (fallback to original logic)
+  // Default values if no config is provided
   const name = config?.name || t("concierge.name");
   const greeting = config?.greeting || t("concierge.greeting");
   const primaryColor = config?.branding?.primaryColor || "var(--accent)";
@@ -49,11 +51,37 @@ export default function AIConcierge({ config, previewMode = false, embedMode = f
     { label: t("concierge.preset.saas.label"), query: t("concierge.preset.saas.query") },
   ];
 
-  const [messages, setMessages] = useState<{ role: 'ai' | 'user', content: string }[]>(() => [
-    { role: 'ai', content: greeting }
-  ]);
+  type Message = { role: 'assistant' | 'user', content: string };
+
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [input, setInput] = useState("");
+
+  // Storage Key
+  const storageKey = `aris_chat_${config?.name || 'default'}`;
+
+  // Load messages from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse saved messages", e);
+        setMessages([{ role: 'assistant', content: greeting }]);
+      }
+    } else {
+      setMessages([{ role: 'assistant', content: greeting }]);
+    }
+  }, [storageKey, greeting]);
+
+  // Save messages to localStorage
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(storageKey, JSON.stringify(messages));
+    }
+  }, [messages, storageKey]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -61,18 +89,29 @@ export default function AIConcierge({ config, previewMode = false, embedMode = f
     }
   }, [messages, isTyping]);
 
-  const handleQuery = async (query: string) => {
-    if (previewMode) return; // Disable actual logic in preview
+  const clearChat = () => {
+    setMessages([{ role: 'assistant', content: greeting }]);
+    localStorage.removeItem(storageKey);
+  };
 
-    setMessages(prev => [...prev, { role: 'user', content: query }]);
+  const handleQuery = async (query: string) => {
+    if (!query.trim() || previewMode) return;
+
+    const newMessages: Message[] = [...messages, { role: 'user', content: query }];
+    setMessages(newMessages);
+    setInput("");
     setIsTyping(true);
 
     try {
-      const res = await fetch("/api/chat", {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          message: query,
+          messages: newMessages,
+          context: {
+            url: typeof window !== "undefined" ? window.location.href : undefined,
+            title: typeof window !== "undefined" ? document.title : undefined,
+          },
           config: config ? {
             name: config.name,
             description: config.description,
@@ -81,13 +120,35 @@ export default function AIConcierge({ config, previewMode = false, embedMode = f
         })
       });
 
-      if (!res.ok) throw new Error("Neural link failed");
-      const data = await res.json();
+      if (!response.ok) throw new Error("Connection lost");
 
-      setMessages(prev => [...prev, { role: 'ai', content: data.text }]);
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      
+      if (!reader) throw new Error("No reader");
+
+      let assistantMessage = "";
+      setMessages(prev => [...prev, { role: 'assistant', content: "" }]);
+      setIsTyping(false); // Stop typing indicator once stream starts
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        assistantMessage += chunk;
+        
+        setMessages(prev => {
+          const last = prev[prev.length - 1];
+          if (last.role === 'assistant') {
+            return [...prev.slice(0, -1), { role: 'assistant', content: assistantMessage }];
+          }
+          return prev;
+        });
+      }
     } catch (error) {
       console.error("Chat failure:", error);
-      setMessages(prev => [...prev, { role: 'ai', content: t("concierge.fallback") }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: t("concierge.fallback") }]);
     } finally {
       setIsTyping(false);
     }
@@ -96,21 +157,15 @@ export default function AIConcierge({ config, previewMode = false, embedMode = f
   return (
     <div className={previewMode ? "relative" : ""}>
       {/* Floating Toggle */}
-      {!previewMode && (
+      {!previewMode && !embedMode && (
         <button
-          onClick={() => {
-            setIsOpen(!isOpen);
-            if (typeof window !== "undefined") {
-              window.parent.postMessage({ type: 'TOGGLE_WIDGET' }, '*');
-            }
-          }}
+          onClick={() => setIsOpen(!isOpen)}
           className="fixed bottom-8 right-8 z-60 w-14 h-14 text-background rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 group overflow-hidden"
         >
           <div 
             className="absolute inset-0 animate-gradient-xy group-hover:scale-110 transition-transform duration-500" 
-            style={{ background: 'linear-gradient(135deg, #94A3B8, #3B82F6, #10B981, #8B5CF6)' }}
+            style={{ background: 'linear-gradient(135deg, #4F46E5, #3B82F6, #10B981)' }}
           />
-          
           <AnimatePresence mode="wait">
             {isOpen ? (
               <motion.div key="close" className="relative z-10" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
@@ -134,121 +189,166 @@ export default function AIConcierge({ config, previewMode = false, embedMode = f
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className={`
-              ${previewMode ? "relative w-full h-[500px]" : embedMode ? "fixed inset-0 w-full h-full" : "fixed bottom-24 right-8 w-[380px] h-[520px]"} 
-              z-60 rounded-[32px] flex flex-col overflow-hidden shadow-dark-lg transition-all duration-500
+              ${previewMode ? "relative w-full h-[600px]" : embedMode ? "fixed inset-0 w-full h-full" : 
+                isMaximized ? "fixed inset-8 w-auto h-auto" : "fixed bottom-24 right-8 w-[420px] max-w-[calc(100vw-64px)] h-[600px] max-h-[calc(100vh-120px)]"} 
+              z-60 rounded-[32px] flex flex-col overflow-hidden shadow-2xl transition-all duration-500
               ${config?.branding?.theme === 'light' ? 'bg-white text-gray-900 border-gray-200' : 
-                config?.branding?.theme === 'glass' ? 'glass-card border-white/10 backdrop-blur-2xl' : 
-                'bg-[#0a0a0a] text-white border-white/5'} 
+                config?.branding?.theme === 'glass' ? 'bg-black/80 backdrop-blur-3xl border-white/10' : 
+                'bg-slate-950 text-white border-white/5'} 
               border
             `}
           >
             {/* Header */}
-            <div className={`relative p-6 border-b flex items-center justify-between overflow-hidden ${config?.branding?.theme === 'light' ? 'bg-gray-50 border-gray-100' : 'bg-white/5 border-white/5'}`}>
-              {/* Header Gradient Overlay */}
-              <div className="absolute inset-0 bg-linear-to-r from-[#3B82F6]/5 to-[#8B5CF6]/5 opacity-50" />
+            <div className={`relative p-6 border-b flex items-center justify-between overflow-hidden bg-white/5 border-white/5`}>
+              <div className="absolute inset-0 bg-linear-to-r from-blue-500/10 to-purple-500/10 opacity-30" />
               
-              <div className="flex items-center gap-3 relative z-10">
+              <div className="flex items-center gap-4 relative z-10">
                 <div 
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-background shadow-lg"
-                  style={{ background: 'linear-gradient(135deg, #94A3B8, #3B82F6, #8B5CF6)' }}
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-background shadow-xl"
+                  style={{ background: 'linear-gradient(135deg, #4F46E5, #3B82F6, #8B5CF6)' }}
                 >
-                  <DynamicIcon name={iconName} size={22} />
+                  <DynamicIcon name={iconName} size={26} />
                 </div>
                 <div>
-                  <h3 className={`text-sm font-bold tracking-tight ${config?.branding?.theme === 'light' ? 'text-gray-900' : 'text-white'}`}>{name}</h3>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-[10px] text-emerald-400/80 font-bold uppercase tracking-widest">{t("concierge.status")}</span>
+                  <h3 className="text-sm font-bold tracking-tight text-white">{name}</h3>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+                    <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">{t("concierge.status")}</span>
                   </div>
                 </div>
               </div>
-              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center" style={{ color: `${primaryColor}80` }}>
-                <Zap size={14} />
+              
+              <div className="flex items-center gap-2 relative z-10">
+                {!previewMode && !embedMode && (
+                  <button 
+                    onClick={() => setIsMaximized(!isMaximized)}
+                    className="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+                    title={isMaximized ? "Restore" : "Maximize"}
+                  >
+                    {isMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                  </button>
+                )}
+                <button 
+                  onClick={clearChat}
+                  className="p-2 text-white/40 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+                  title="Clear Chat"
+                >
+                  <Trash2 size={16} />
+                </button>
+                {!previewMode && !embedMode && (
+                  <button 
+                    onClick={() => setIsOpen(false)}
+                    className="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-all md:hidden"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
               </div>
             </div>
 
             {/* Messages Area */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-hide">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth">
               {messages.map((msg, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${msg.role === 'ai' ? 'justify-start' : 'justify-end'}`}
+                  className={`flex ${msg.role === 'assistant' ? 'justify-start' : 'justify-end'}`}
                 >
                   <div 
-                    className={`max-w-[80%] p-4 rounded-2xl text-xs leading-relaxed shadow-sm ${
-                      msg.role === 'ai' 
-                        ? config?.branding?.theme === 'light' 
-                          ? 'bg-gray-100 text-gray-700 rounded-tl-none border border-gray-200'
-                          : 'bg-white/5 text-gray-300 rounded-tl-none border border-white/5' 
-                        : 'text-background rounded-tr-none font-medium'
+                    className={`max-w-[85%] p-5 rounded-3xl group relative ${
+                      msg.role === 'assistant' 
+                        ? 'bg-white/5 text-gray-200 rounded-tl-none border border-white/10 shadow-lg' 
+                        : 'text-white rounded-tr-none font-medium shadow-xl'
                     }`}
-                    style={msg.role === 'user' ? { backgroundColor: primaryColor } : {}}
+                    style={msg.role === 'user' ? { background: `linear-gradient(135deg, ${primaryColor}, #3B82F6)` } : {}}
                   >
-                    {msg.content}
+                    {msg.role === 'assistant' ? (
+                      <div className="markdown-prose text-sm leading-relaxed tracking-wide">
+                        <ReactMarkdown>
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-sm leading-relaxed">{msg.content}</p>
+                    )}
                   </div>
                 </motion.div>
               ))}
               
               {isTyping && (
                 <div className="flex justify-start">
-                  <div className="bg-white/5 p-4 rounded-2xl rounded-tl-none border border-white/5 flex gap-1">
-                    <span className="w-1 h-1 rounded-full animate-bounce" style={{ backgroundColor: primaryColor }} />
-                    <span className="w-1 h-1 rounded-full animate-bounce [animation-delay:0.2s]" style={{ backgroundColor: primaryColor }} />
-                    <span className="w-1 h-1 rounded-full animate-bounce [animation-delay:0.4s]" style={{ backgroundColor: primaryColor }} />
+                  <div className="bg-white/5 p-5 rounded-3xl rounded-tl-none border border-white/5 flex gap-1.5 shadow-lg">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce [animation-delay:0.2s]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-300 animate-bounce [animation-delay:0.4s]" />
                   </div>
                 </div>
               )}
             </div>
 
             {/* Presets & Input Area */}
-            <div className="p-6 pt-0 space-y-4">
+            <div className="p-8 pt-2 space-y-6 bg-linear-to-b from-transparent to-black/20">
               {messages.length < 4 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2.5">
                   {PRESETS.map((preset, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleQuery(preset.query)}
-                      className="text-[10px] font-bold px-3 py-1.5 rounded-full border border-accent/20 bg-accent/5 hover:bg-accent/10 transition-colors flex items-center gap-2 group"
-                      style={{ color: primaryColor, borderColor: `${primaryColor}33`, backgroundColor: `${primaryColor}0D` }}
+                      className="text-[11px] font-bold px-4 py-2 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/15 text-white/70 hover:text-white transition-all flex items-center gap-2.5 backdrop-blur-md shadow-sm"
                     >
                       {preset.label}
-                      <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                      <ArrowRight size={14} className="opacity-50" />
                     </button>
                   ))}
                 </div>
               )}
 
-              <div className="relative group">
+              <div className="relative">
                 <input
                   type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
                   placeholder={t("concierge.placeholder")}
-                  disabled={previewMode}
-                  className={`w-full border rounded-2xl py-4 pl-6 pr-14 text-xs focus:border-accent outline-none transition-all ${
-                    config?.branding?.theme === 'light' 
-                      ? 'bg-gray-50 border-gray-200 text-gray-900 focus:bg-white' 
-                      : 'bg-white/5 border-white/10 text-white focus:bg-white/10'
+                  disabled={previewMode || isTyping}
+                  className={`w-full border rounded-[24px] py-5 pl-8 pr-16 text-sm outline-none transition-all shadow-xl font-medium
+                    ${config?.branding?.theme === 'light' 
+                      ? 'bg-gray-50 border-gray-200 text-gray-900 focus:bg-white focus:border-blue-500' 
+                      : 'bg-white/5 border-white/10 text-white focus:bg-white/10 focus:border-white/20'
                   }`}
-                  style={{ "--tw-ring-color": primaryColor } as React.CSSProperties}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && e.currentTarget.value) {
-                      handleQuery(e.currentTarget.value);
-                      e.currentTarget.value = '';
+                    if (e.key === 'Enter' && input) {
+                      handleQuery(input);
                     }
                   }}
                 />
                 <button 
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-accent/10 text-accent rounded-xl hover:bg-accent hover:text-background transition-all"
-                  style={{ color: primaryColor, backgroundColor: `${primaryColor}1A` }}
+                  onClick={() => handleQuery(input)}
+                  disabled={!input || isTyping}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center bg-white text-slate-950 rounded-2xl hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all shadow-lg"
                 >
-                  <Send size={14} />
+                  {isTyping ? <div className="w-4 h-4 border-2 border-slate-950/20 border-t-slate-950 rounded-full animate-spin" /> : <Send size={18} />}
                 </button>
               </div>
+              
+              <p className="text-[10px] text-center text-white/20 font-medium tracking-tight">
+                ARiS Intelligence • Powered by Gemini 2.0 Flash
+              </p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+      
+      <style jsx global>{`
+        .markdown-prose p { margin-bottom: 0.75rem; }
+        .markdown-prose p:last-child { margin-bottom: 0; }
+        .markdown-prose ul, .markdown-prose ol { margin-left: 1.25rem; margin-bottom: 0.75rem; list-style-type: disc; }
+        .markdown-prose li { margin-bottom: 0.25rem; }
+        .markdown-prose strong { color: white; font-weight: 700; }
+        .markdown-prose code { background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-family: monospace; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </div>
   );
 }

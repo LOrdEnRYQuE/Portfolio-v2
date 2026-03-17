@@ -9,7 +9,12 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ArrowRight, Github, ExternalLink } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
-export default function FeaturedProjects() {
+interface FeaturedProjectsProps {
+  title?: string;
+  subtitle?: string;
+}
+
+export default function FeaturedProjects({ title, subtitle }: FeaturedProjectsProps) {
   const { t } = useI18n();
   const featured = projects.filter((p) => p.featured).slice(0, 3);
 
@@ -23,8 +28,8 @@ export default function FeaturedProjects() {
         className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16"
       >
         <SectionHeading 
-          title={t("projects.section_title")} 
-          subtitle={t("projects.subtitle")} 
+          title={title || t("projects.section_title")} 
+          subtitle={subtitle || t("projects.subtitle")} 
           className="mb-0"
         />
         <Button href="/projects" variant="ghost" className="group text-text-secondary hover:text-foreground">

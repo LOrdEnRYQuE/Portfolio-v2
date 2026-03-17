@@ -9,7 +9,7 @@ export default async function BlogPage() {
 
   return (
     <div className="relative min-h-screen">
-      {/* Neural Background Elements */}
+      {/* LOrdEnRYQuE Background Elements */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[20%] left-[10%] w-[40%] h-[40%] bg-accent-blue/5 rounded-full blur-[120px]" />
         <div className="absolute bottom-[30%] right-[5%] w-[30%] h-[30%] bg-accent-purple/5 rounded-full blur-[100px]" />
@@ -24,7 +24,7 @@ export default async function BlogPage() {
             </span>
           </div>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground uppercase">
-            Neural Insights
+            LOrdEnRYQuE Insights
           </h1>
           <p className="text-lg md:text-xl text-foreground/60 max-w-2xl mx-auto font-light">
             Engineering, AI, and the mechanics of high-impact product execution.

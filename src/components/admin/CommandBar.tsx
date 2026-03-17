@@ -57,10 +57,10 @@ export function CommandBar() {
   const staticCommands = [
     { title: "Dashboard", href: "/admin", icon: Activity, category: "Command" },
     { title: "Agent Fleet", href: "/admin/agents", icon: Bot, category: "Command" },
-    { title: "Neural Forge", href: "/admin/agents/generate", icon: Cpu, category: "Command" },
+    { title: "LOrdEnRYQuE Forge", href: "/admin/agents/generate", icon: Cpu, category: "Command" },
     { title: "Project Command", href: "/admin/projects", icon: FolderKanban, category: "Content" },
     { title: "Portfolio Hub", href: "/admin/portfolio", icon: Briefcase, category: "Content" },
-    { title: "Neural Blog", href: "/admin/blog", icon: FileText, category: "Content" },
+    { title: "LOrdEnRYQuE Blog", href: "/admin/blog", icon: FileText, category: "Content" },
     { title: "Media Vault", href: "/admin/media", icon: ImageIcon, category: "Content" },
     { title: "Lead Hub", href: "/admin/leads", icon: Zap, category: "Oversight" },
     { title: "User Fleet", href: "/admin/users", icon: ShieldCheck, category: "Oversight" },
@@ -139,7 +139,7 @@ export function CommandBar() {
               
               <input
                 autoFocus
-                placeholder="Initialize neural search (⌘K)..."
+                placeholder="Initialize intelligence search (⌘K)..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="bg-transparent border-none outline-none text-white text-lg w-full font-medium placeholder:text-white/10 focus:ring-0"
@@ -197,7 +197,7 @@ export function CommandBar() {
                     <Search size={32} />
                   </div>
                   <div>
-                    <p className="text-white/20 text-[11px] font-black uppercase tracking-[0.3em]">Neural link idle</p>
+                    <p className="text-white/20 text-[11px] font-black uppercase tracking-[0.3em]">Intelligence link idle</p>
                     <p className="text-white/10 text-[9px] uppercase tracking-widest mt-2">No nodes found matching &quot;{query}&quot;</p>
                   </div>
                 </div>
@@ -216,7 +216,7 @@ export function CommandBar() {
                
                <div className="flex items-center gap-4 text-[10px] font-bold text-white/15 uppercase tracking-[0.2em]">
                  <Activity size={12} className="text-accent animate-pulse" />
-                 Neural Flux: Active
+                 System Flux: Active
                </div>
             </div>
           </motion.div>

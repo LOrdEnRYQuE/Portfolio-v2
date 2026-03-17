@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { motion } from "framer-motion";
-import { AlertTriangle, RefreshCcw, Home } from "lucide-react";
-import Link from "next/link";
+import { m } from "framer-motion";
+import { Button } from "@/components/ui/Button";
+import { RefreshCcw, Home, AlertCircle } from "lucide-react";
 
 export default function Error({
   error,
@@ -14,58 +14,71 @@ export default function Error({
 }) {
   useEffect(() => {
     // Log the error to an error reporting service
-    console.error("System Error Overlay:", error);
+    console.error(error);
   }, [error]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background relative overflow-hidden">
-      {/* Neural Background Gradients */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent-blue/10 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent-purple/10 blur-[120px] rounded-full delay-700 animate-pulse" />
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center relative overflow-hidden bg-background">
+      {/* Background elements */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-30">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-red-500/5 rounded-full blur-[120px]" />
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="max-w-xl w-full p-12 rounded-3xl border border-border bg-surface/50 backdrop-blur-2xl relative z-10 text-center shadow-2xl"
-      >
-        <div className="mb-8 inline-flex items-center justify-center w-24 h-24 rounded-full bg-red-500/10 border border-red-500/20 text-red-500">
-          <AlertTriangle size={48} />
-        </div>
+      <div className="relative z-10 space-y-8 max-w-2xl px-4">
+        <m.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ 
+            type: "spring",
+            stiffness: 260,
+            damping: 20 
+          }}
+          className="w-24 h-24 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto mb-12 border border-red-500/20 shadow-red-glow"
+        >
+          <AlertCircle size={48} className="text-red-500" />
+        </m.div>
 
-        <h1 className="text-4xl font-black text-foreground mb-4 tracking-tight">
-          System Breach Detected
-        </h1>
-        
-        <p className="text-text-secondary mb-10 leading-relaxed max-w-sm mx-auto">
-          The neural link encountered an unexpected exception. Our systems are attempting to stabilize the environment.
-        </p>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <button
-            onClick={() => reset()}
-            className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-foreground text-background font-bold hover:opacity-90 transition-all w-full sm:w-auto active:scale-95"
-          >
-            <RefreshCcw size={18} />
-            Initialize Recovery
-          </button>
-          
-          <Link
-            href="/"
-            className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl border border-border bg-surface text-foreground font-bold hover:border-border-strong transition-all w-full sm:w-auto active:scale-95"
-          >
-            <Home size={18} />
-            Return Home
-          </Link>
-        </div>
+        <m.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight mb-4">
+            System Synchronization Failure
+          </h1>
+          <p className="text-text-secondary text-lg leading-relaxed">
+            The LOrdEnRYQuE core encountered an unexpected error while processing your request. 
+            Don&apos;t worry, our automated recovery systems are on it.
+          </p>
+        </m.div>
 
         {error.digest && (
-          <p className="mt-8 text-[10px] font-mono text-text-muted opacity-50 uppercase tracking-widest">
-            Digest Code: {error.digest}
-          </p>
+          <m.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-xs font-mono text-text-secondary/50 bg-white/5 py-2 px-4 rounded-lg inline-block"
+          >
+            Error ID: {error.digest}
+          </m.p>
         )}
-      </motion.div>
+
+        <m.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6"
+        >
+          <Button onClick={() => reset()} variant="primary" size="lg" className="rounded-2xl px-10 shadow-blue-glow w-full sm:w-auto">
+            <RefreshCcw size={18} className="mr-2" />
+            Try Re-synchronizing
+          </Button>
+          <Button href="/" variant="ghost" size="lg" className="rounded-2xl px-8 text-text-secondary hover:text-foreground w-full sm:w-auto">
+            <Home size={18} className="mr-2" />
+            Return to Core
+          </Button>
+        </m.div>
+      </div>
     </div>
   );
 }

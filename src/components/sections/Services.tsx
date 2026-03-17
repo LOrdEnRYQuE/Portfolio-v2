@@ -21,7 +21,12 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
-export default function Services() {
+interface ServicesProps {
+  title?: string;
+  subtitle?: string;
+}
+
+export default function Services({ title, subtitle }: ServicesProps) {
   const { t } = useI18n();
 
   const getLocalizedServices = () => {
@@ -43,8 +48,8 @@ export default function Services() {
   return (
     <section className="py-32 px-6 md:px-10 max-w-7xl mx-auto border-t border-border">
       <SectionHeading 
-        title={t("services.title")} 
-        subtitle={t("services.subtitle")} 
+        title={title || t("services.title")} 
+        subtitle={subtitle || t("services.subtitle")} 
         align="center" 
       />
 

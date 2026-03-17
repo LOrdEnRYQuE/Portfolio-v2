@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, memo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, memo } from "react";
+import { usePathname } from "next/navigation";
+import { m, AnimatePresence } from "framer-motion";
 import { Menu, X, Globe } from "lucide-react";
 import { siteConfig } from "@/content/site";
 import { useI18n } from "@/lib/i18n";
@@ -10,7 +11,7 @@ import { useI18n } from "@/lib/i18n";
 const BubbleEffect = memo(({ count = 12, isMobile = false }: { count?: number; isMobile?: boolean }) => (
   <div className="absolute inset-0 pointer-events-none overflow-hidden">
     {[...Array(count)].map((_, i) => (
-      <motion.div
+      <m.div
         key={`bubble-${isMobile ? 'm' : 'd'}-${i}`}
         animate={{
           y: isMobile ? [-15, 90, -15] : [-30, 120, -30],
@@ -43,7 +44,7 @@ const BubbleEffect = memo(({ count = 12, isMobile = false }: { count?: number; i
       />
     ))}
     
-    <motion.div
+    <m.div
       animate={{
         background: [
           "linear-gradient(45deg, rgba(148,163,184,0.12) 0%, transparent 30%, rgba(59,130,246,0.08) 60%, transparent 100%)",
@@ -65,19 +66,49 @@ const BubbleEffect = memo(({ count = 12, isMobile = false }: { count?: number; i
 BubbleEffect.displayName = "BubbleEffect";
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { locale, setLocale, t } = useI18n();
+  const [dynamicLinks, setDynamicLinks] = useState<{ href: string; label: string }[]>([]);
+  const [brand, setBrand] = useState(siteConfig.brand);
 
-  const navLinks = [
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch navigation
+        const navRes = await fetch("/api/navigation");
+        const navData = await navRes.json();
+        if (Array.isArray(navData)) {
+          setDynamicLinks(navData.map((p: { slug: string; title: string }) => ({ href: `/${p.slug}`, label: p.title })));
+        }
+
+        // Fetch settings
+        const settingsRes = await fetch("/api/admin/settings");
+        if (settingsRes.ok) {
+          const settings = await settingsRes.json();
+          if (settings.brand) setBrand(settings.brand);
+        }
+      } catch (error) {
+        console.error("Failed to fetch nav or settings", error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const systemLinks = [
     { href: "/", label: t("nav.home") },
+    { href: "/about", label: t("nav.about") },
     { href: "/projects", label: t("nav.projects") },
     { href: "/blog", label: t("nav.blog") },
     { href: "/demo-branches", label: t("nav.demos") },
+  ];
+
+  const adminLinks = [
     { href: "/admin", label: "Control Panel" },
     { href: "/client", label: t("nav.client_area") },
-    { href: "/#about", label: t("nav.about") },
-    { href: "/contact", label: t("nav.contact") },
   ];
+
+  const allLinks = [...systemLinks, ...dynamicLinks, ...adminLinks];
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50" role="banner">
@@ -89,21 +120,35 @@ export default function Navbar() {
             <Link
               href="/"
               className="text-lg font-semibold tracking-[0.18em] text-foreground hover:text-slate-400 transition-colors duration-300"
-              aria-label={`${siteConfig.brand} home`}
+              aria-label={`${brand} home`}
             >
-              {siteConfig.brand}
+              {brand}
             </Link>
 
             <div className="hidden md:flex items-center gap-8">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-sm text-text-secondary hover:text-text-primary transition-colors duration-200"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {allLinks.map((link) => {
+                const isActive = pathname === link.href || (link.href !== "/" && pathname?.startsWith(link.href));
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`text-sm transition-all duration-200 relative group/link ${
+                      isActive 
+                        ? "text-text-primary font-medium" 
+                        : "text-text-secondary hover:text-text-primary"
+                    }`}
+                  >
+                    {link.label}
+                    {isActive && (
+                      <m.div
+                        layoutId="nav-active"
+                        className="absolute -bottom-1 left-0 right-0 h-0.5 bg-accent-blue rounded-full"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                  </Link>
+                );
+              })}
 
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 ml-2" aria-label="Select language">
                 <button 
@@ -144,7 +189,7 @@ export default function Navbar() {
 
         <AnimatePresence>
           {mobileOpen && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -175,16 +220,22 @@ export default function Navbar() {
                 </div>
 
                 <div className="flex flex-col gap-4">
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setMobileOpen(false)}
-                      className="text-sm text-text-secondary hover:text-text-primary transition-colors py-2"
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
+                  {allLinks.map((link) => {
+                    const isActive = pathname === link.href || (link.href !== "/" && pathname?.startsWith(link.href));
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={`text-sm transition-colors py-2 flex items-center justify-between ${
+                          isActive ? "text-text-primary font-bold" : "text-text-secondary"
+                        }`}
+                      >
+                        {link.label}
+                        {isActive && <div className="w-1.5 h-1.5 rounded-full bg-accent-blue" />}
+                      </Link>
+                    );
+                  })}
                   <Link
                     href="/contact"
                     onClick={() => setMobileOpen(false)}
@@ -194,7 +245,7 @@ export default function Navbar() {
                   </Link>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </nav>

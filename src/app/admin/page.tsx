@@ -2,19 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { 
-  Activity, 
-  Bot, 
-  MessageSquare, 
-  Zap, 
+import {
+  Activity,
+  Bot,
+  MessageSquare,
+  Zap,
   ShieldCheck,
-  Cpu,
-  History,
-  Terminal,
-  Image as ImageIcon,
-  ArrowUpRight,
   Briefcase,
-  FileText
+  FileText,
+  TrendingUp,
+  Users,
+  Clock,
+  ArrowUpRight,
+  CheckCircle2,
+  AlertCircle,
+  Circle,
+  Inbox,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -24,38 +28,124 @@ interface Stats {
   leads: number;
   assets: number;
   portfolio: number;
-  health: string;
+  users: number;
+}
+
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  concept: string;
+  industry: string;
+  status: string;
+  createdAt: string;
+}
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  trend,
+  color,
+  href,
+  loading,
+}: {
+  label: string;
+  value: number;
+  icon: React.ElementType;
+  trend: string;
+  color: string;
+  href: string;
+  loading: boolean;
+}) {
+  return (
+    <Link href={href}>
+      <motion.div
+        whileHover={{ y: -2 }}
+        className="relative p-6 rounded-2xl bg-white/3 border border-white/8 hover:border-white/20 hover:bg-white/5 transition-all duration-300 group cursor-pointer overflow-hidden"
+      >
+        <div className={`absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-500 ${color}`} />
+        <div className="flex items-start justify-between mb-4">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center border border-white/10 group-hover:border-white/20 transition-all ${color} bg-current/5`}>
+            <Icon size={18} className="opacity-70 group-hover:opacity-100 transition-opacity" />
+          </div>
+          <ArrowUpRight size={14} className="text-white/20 group-hover:text-white/60 transition-colors" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-3xl font-bold tracking-tight text-white">
+            {loading ? (
+              <span className="w-12 h-7 bg-white/10 rounded animate-pulse inline-block" />
+            ) : (
+              value.toLocaleString()
+            )}
+          </p>
+          <p className="text-xs font-semibold text-white/50 uppercase tracking-widest">{label}</p>
+          <p className="text-[11px] text-white/25">{trend}</p>
+        </div>
+      </motion.div>
+    </Link>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; color: string; Icon: React.ElementType }> = {
+    NEW: { label: "New", color: "text-blue-400 bg-blue-400/10 border-blue-400/20", Icon: Circle },
+    REVIEWING: { label: "Reviewing", color: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20", Icon: Clock },
+    CONVERTED: { label: "Converted", color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20", Icon: CheckCircle2 },
+    REJECTED: { label: "Rejected", color: "text-red-400 bg-red-400/10 border-red-400/20", Icon: AlertCircle },
+  };
+  const s = map[status] || map["NEW"];
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${s.color}`}>
+      <s.Icon size={10} />
+      {s.label}
+    </span>
+  );
 }
 
 export default function AdminOverview() {
-  const [stats, setStats] = useState<Stats>({ agents: 0, conversations: 0, leads: 0, assets: 0, portfolio: 0, health: "OPTIMAL" });
+  const [stats, setStats] = useState<Stats>({ agents: 0, conversations: 0, leads: 0, assets: 0, portfolio: 0, users: 0 });
+  const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchStats() {
       try {
-          const agentsRes = await fetch("/api/agents");
-          const agentsData = await agentsRes.json();
-          
-          const leadsRes = await fetch("/api/admin/leads");
-          const leadsData = await leadsRes.json();
-          
-          const mediaRes = await fetch("/api/admin/media");
-          const mediaData = await mediaRes.json();
-          
-          const portfolioRes = await fetch("/api/portfolio");
-          const portfolioData = await portfolioRes.json();
+        const [agentsRes, leadsRes, mediaRes, portfolioRes, usersRes] = await Promise.allSettled([
+          fetch("/api/agents"),
+          fetch("/api/admin/leads"),
+          fetch("/api/admin/media"),
+          fetch("/api/portfolio"),
+          fetch("/api/admin/users"),
+        ]);
 
-          const totalConvs = Array.isArray(agentsData) ? agentsData.reduce((acc: number, agent: { _count?: { conversations: number } }) => acc + (agent._count?.conversations || 0), 0) : 0;
-          
-          setStats({
-            agents: Array.isArray(agentsData) ? agentsData.length : 0,
-            conversations: totalConvs,
-            leads: Array.isArray(leadsData) ? leadsData.length : 0,
-            assets: Array.isArray(mediaData) ? mediaData.length : 0,
-            portfolio: Array.isArray(portfolioData) ? portfolioData.length : 0,
-            health: "OPTIMAL"
-          });
+        const agentsData = agentsRes.status === "fulfilled" && agentsRes.value.ok ? await agentsRes.value.json() : [];
+        const leadsData = leadsRes.status === "fulfilled" && leadsRes.value.ok ? await leadsRes.value.json() : [];
+        const mediaData = mediaRes.status === "fulfilled" && mediaRes.value.ok ? await mediaRes.value.json() : [];
+        const portfolioData = portfolioRes.status === "fulfilled" && portfolioRes.value.ok ? await portfolioRes.value.json() : [];
+        const usersData = usersRes.status === "fulfilled" && usersRes.value.ok ? await usersRes.value.json() : [];
+
+        const totalConvs = Array.isArray(agentsData)
+          ? agentsData.reduce((acc: number, agent: { _count?: { conversations: number } }) => acc + (agent._count?.conversations || 0), 0)
+          : 0;
+
+        setStats({
+          agents: Array.isArray(agentsData) ? agentsData.length : 0,
+          conversations: totalConvs,
+          leads: Array.isArray(leadsData) ? leadsData.length : 0,
+          assets: Array.isArray(mediaData) ? mediaData.length : 0,
+          portfolio: Array.isArray(portfolioData) ? portfolioData.length : 0,
+          users: Array.isArray(usersData) ? usersData.length : 0,
+        });
+
+        // Pick the 5 most recent leads
+        if (Array.isArray(leadsData)) {
+          setRecentLeads(
+            [...leadsData]
+              .sort((a: Lead, b: Lead) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+              .slice(0, 5)
+          );
+        }
       } catch (e) {
         console.error("Failed to fetch dashboard stats", e);
       } finally {
@@ -65,244 +155,195 @@ export default function AdminOverview() {
     fetchStats();
   }, []);
 
-  const metrics = [
-    { label: "Neural Nodes", value: stats.agents, icon: Bot, trend: "Active fleet", color: "text-accent" },
-    { label: "Data Flux", value: stats.conversations, icon: MessageSquare, trend: "Synced to core", color: "text-emerald-400" },
-    { label: "Lead Synapses", value: stats.leads, icon: Zap, trend: "Pulse active", color: "text-accent" },
-    { label: "Vault Assets", value: stats.assets, icon: ShieldCheck, trend: "Encryption active", color: "text-accent" },
-    { label: "Portfolio Hub", value: stats.portfolio, icon: Briefcase, trend: "Projects live", color: "text-emerald-400" },
+  const statCards = [
+    { label: "Active Agents", value: stats.agents, icon: Bot, trend: "AI agent fleet", color: "text-accent", href: "/admin/agents" },
+    { label: "Conversations", value: stats.conversations, icon: MessageSquare, trend: "Across all agents", color: "text-blue-400", href: "/admin/agents" },
+    { label: "Leads", value: stats.leads, icon: Zap, trend: "Total inquiries", color: "text-yellow-400", href: "/admin/leads" },
+    { label: "Media Assets", value: stats.assets, icon: ShieldCheck, trend: "Files in vault", color: "text-purple-400", href: "/admin/media" },
+    { label: "Portfolio Items", value: stats.portfolio, icon: Briefcase, trend: "Published projects", color: "text-emerald-400", href: "/admin/portfolio" },
+    { label: "Users", value: stats.users, icon: Users, trend: "Registered accounts", color: "text-rose-400", href: "/admin/users" },
   ];
 
+  const quickLinks = [
+    { label: "Lead Hub", desc: "Manage inquiries", icon: Zap, href: "/admin/leads", color: "text-yellow-400" },
+    { label: "Agent Fleet", desc: "Configure AI agents", icon: Bot, href: "/admin/agents", color: "text-accent" },
+    { label: "Portfolio", desc: "Showcase projects", icon: Briefcase, href: "/admin/portfolio", color: "text-emerald-400" },
+    { label: "Blog", desc: "Publish content", icon: FileText, href: "/admin/blog", color: "text-blue-400" },
+  ];
+
+  const timeAgo = (date: string) => {
+    const diff = Date.now() - new Date(date).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  };
+
   return (
-    <div className="min-h-screen bg-transparent text-white p-8 sm:p-12 lg:p-16 relative overflow-hidden selection:bg-accent/30 selection:text-white">
-      {/* Neural Background Sweep */}
-      <div className="absolute top-0 left-0 w-full h-[2px] bg-linear-to-r from-transparent via-accent/40 to-transparent animate-scan pointer-events-none z-50" />
-      
-      {/* Background Grid Pattern */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-        style={{ backgroundImage: 'radial-gradient(var(--accent) 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
-      />
-
-      <div className="max-w-7xl mx-auto space-y-16 relative z-10">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-12">
-          <div className="space-y-6">
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[9px] font-black uppercase tracking-[0.3em] shadow-accent-glow-sm"
-            >
-              <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-              Neural Link: Level 4 Oversight
-            </motion.div>
-            <div className="space-y-1">
-              <h1 className="text-6xl sm:text-7xl font-black tracking-tighter uppercase italic leading-[0.8] flex flex-col">
-                <span className="text-white/20 text-2xl not-italic tracking-[0.2em] mb-2 font-black antialiased">L&apos;ORDRE</span>
-                <span className="relative inline-block">
-                  Neural <span className="text-accent underline decoration-4 underline-offset-12">Command</span>
-                </span>
-              </h1>
-            </div>
-            <p className="text-white/40 text-sm max-w-xl leading-relaxed italic border-l-2 border-accent/20 pl-6 ml-1 py-1 font-medium antialiased">
-              Synthesized oversight of active neural nodes and cross-entity engagement. System flux is initialized and synchronized with the AI Core.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="text-right hidden sm:block space-y-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Operational Status</p>
-              <div className="flex items-center justify-end gap-2">
-                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-emerald-glow" />
-                 <p className="text-xs font-black text-emerald-400 uppercase tracking-widest">Core Synchronized</p>
-              </div>
-            </div>
-            <div className="w-16 h-16 rounded-4xl bg-accent/5 border border-accent/20 flex items-center justify-center text-accent shadow-accent-glow-sm group hover:scale-105 transition-transform duration-500">
-               <ShieldCheck size={32} className="group-hover:drop-shadow-accent transition-all" />
-            </div>
-          </div>
+    <div className="min-h-screen p-8 md:p-12 space-y-10">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Command Overview</p>
+          <h1 className="text-4xl font-bold tracking-tight text-white">
+            Dashboard
+          </h1>
+          <p className="text-white/40 text-sm">
+            {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+          </p>
         </div>
-
-        {/* Metric Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {metrics.map((m, i) => (
-            <motion.div 
-              key={i}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1, duration: 0.8 }}
-              className="glass-card p-10 rounded-[3rem] border-white/5 space-y-6 group hover:bg-white/3 hover:border-accent/30 transition-all duration-700 relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 blur-2xl rounded-full -translate-y-12 translate-x-12 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-              
-              <div className="flex items-start justify-between relative z-10">
-                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white/30 group-hover:text-accent group-hover:border-accent/30 group-hover:shadow-accent-glow-sm flex items-center justify-center transition-all duration-500">
-                  <m.icon size={24} />
-                </div>
-                <div className="flex items-center gap-2 text-white/20 group-hover:text-accent/60 text-[8px] font-black uppercase tracking-[0.2em] transition-colors">
-                  {m.trend}
-                  <ArrowUpRight size={10} />
-                </div>
-              </div>
-              
-              <div className="space-y-1 relative z-10">
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 group-hover:text-white/40 transition-colors">{m.label}</p>
-                <p className={`text-4xl font-black tracking-tighter ${m.color} group-hover:scale-110 origin-left transition-transform duration-500`}>
-                  {loading ? "..." : m.value}
-                </p>
-              </div>
-              
-              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden relative z-10">
-                 <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: "100%" }}
-                  transition={{ delay: 1 + (i * 0.2), duration: 2 }}
-                  className="h-full bg-linear-to-r from-accent/0 via-accent/40 to-accent/80" 
-                 />
-              </div>
-            </motion.div>
-          ))}
+        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-emerald-400 text-xs font-bold uppercase tracking-wider">All Systems Operational</span>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Neural Pulse Area */}
-          <div className="lg:col-span-2 glass-card rounded-[4rem] border-white/5 p-12 space-y-12 min-h-[500px] flex flex-col justify-between overflow-hidden relative group">
-             {/* Background Scanner Line for this card */}
-             <div className="absolute inset-y-0 left-0 w-px bg-accent/10 group-hover:translate-x-[600px] transition-transform duration-3000 ease-in-out pointer-events-none" />
-             
-             <div className="absolute bottom-0 right-0 p-16 opacity-[0.03] scale-150 rotate-12 group-hover:rotate-0 transition-transform duration-1000">
-                <Cpu size={300} />
-             </div>
-             
-             <div className="space-y-3 relative z-10">
-                <div className="flex items-center gap-4">
-                  <div className="w-3 h-3 rounded-full bg-accent relative">
-                    <div className="absolute inset-0 bg-accent rounded-full animate-ping opacity-75" />
-                  </div>
-                  <h3 className="text-2xl font-black tracking-tighter uppercase italic text-white/90">Engagement Synchronicity</h3>
-                </div>
-                <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em] border-l border-white/10 pl-6 ml-1.5 py-1">Cross-Node Pulse Feedback // Neural Flux Monitoring</p>
-             </div>
+      {/* Stat Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+        {statCards.map((card, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06, duration: 0.5 }}
+          >
+            <StatCard {...card} loading={loading} />
+          </motion.div>
+        ))}
+      </div>
 
-             <div className="flex-1 flex items-end gap-3 h-56 pb-8 px-4">
-                {[45, 75, 55, 95, 85, 90, 40, 65, 85, 70, 100, 55, 85, 60, 80].map((h, i) => (
-                  <motion.div 
-                    key={i}
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: `${h}%`, opacity: 1 }}
-                    transition={{ delay: 0.5 + (i * 0.05), duration: 1.5, ease: "anticipate" }}
-                    className={`flex-1 rounded-2xl bg-linear-to-t from-accent/0 via-accent/10 to-accent/40 border-t border-accent/50 relative group bg-black/20`}
-                  >
-                    <div className="absolute inset-0 bg-accent blur-[20px] opacity-0 group-hover:opacity-30 transition-opacity duration-500" />
-                    {i === 10 && <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-accent animate-pulse shadow-accent-glow-sm" />}
-                  </motion.div>
-                ))}
-             </div>
-
-             <div className="flex items-center justify-between pt-10 border-t border-white/5 relative z-10">
-                <div className="flex items-center gap-10">
-                   <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-accent shadow-accent-glow-sm" />
-                      <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Active Sync Flow</span>
-                   </div>
-                   <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-white/5 shadow-inner" />
-                      <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Neural Resting State</span>
-                   </div>
-                </div>
-                <div className="flex items-center gap-4 text-[9px] font-black uppercase tracking-[0.4em] text-white/10 hover:text-accent transition-colors cursor-pointer group/link">
-                   Initialize Deep Analytics <ArrowUpRight size={12} className="group-hover/link:translate-x-1 transition-transform" />
-                </div>
-             </div>
-          </div>
-
-          {/* Activity Flux Stream */}
-          <div className="glass-card rounded-[4rem] border-white/5 p-12 flex flex-col h-full relative overflow-hidden group">
-            <div className="absolute inset-0 bg-linear-to-b from-accent/2 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-            
-            <div className="flex items-center justify-between mb-12 relative z-10">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-white/5 text-white/40">
-                  <History size={20} />
-                </div>
-                <div>
-                  <h3 className="text-xs font-black uppercase tracking-[0.4em] text-white antialiased">Neural Flux</h3>
-                  <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mt-1 italic">Real-time Stream</p>
-                </div>
+      {/* Main Content Grid */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Recent Leads */}
+        <div className="lg:col-span-2 rounded-2xl bg-white/3 border border-white/8 p-6 space-y-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center">
+                <Inbox size={16} className="text-yellow-400" />
               </div>
-              <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase tracking-widest animate-pulse">
-                Active
+              <div>
+                <h2 className="text-sm font-bold text-white">Recent Leads</h2>
+                <p className="text-[11px] text-white/30">Latest inquiries from clients</p>
               </div>
             </div>
-
-            <div className="flex-1 space-y-8 overflow-y-auto pr-4 custom-scrollbar relative z-10">
-              {[
-                { type: "node", msg: "Neural Node 'Creative Director' initialized successfully.", time: "2 MIN", icon: Bot, status: "ACTIVE" },
-                { type: "lead", msg: "New synapse recorded: Enterprise inquiry from Global Dynamics.", time: "18 MIN", icon: Zap, status: "LOCKED" },
-                { type: "media", msg: "Batch processing completed in Media Vault. 14 new assets ingested.", time: "45 MIN", icon: ImageIcon, status: "SYNCED" },
-                { type: "sys", msg: "Global Command Interface upgraded to v3.0 (Neural Update).", time: "1 HOUR", icon: Terminal, status: "DONE" },
-                { type: "auth", msg: "Security handshake verified. Level 4 encrypted link active.", time: "3 HOURS", icon: ShieldCheck, status: "OPTIMAL" },
-              ].map((item, i) => (
-                <motion.div 
-                  key={i}
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 1 + (i * 0.1), duration: 0.6 }}
-                  className="flex gap-6 group/item relative"
-                >
-                   <div className="absolute left-6 top-12 bottom-0 w-px bg-white/5 group-last:hidden" />
-                   
-                   <div className="relative">
-                      <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-white/20 group-hover/item:text-accent group-hover/item:border-accent/30 group-hover/item:shadow-accent-glow-sm transition-all duration-500">
-                        <item.icon size={18} />
-                      </div>
-                      <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-black border-2 border-white/10 group-hover/item:border-accent/20" />
-                   </div>
-                   
-                   <div className="flex-1 min-w-0 space-y-1.5 pt-1">
-                     <div className="flex items-center justify-between">
-                       <p className="text-[8px] font-black text-accent/40 uppercase tracking-[0.3em]">{item.status}</p>
-                       <p className="text-[8px] font-black text-white/10 uppercase tracking-widest">{item.time}</p>
-                     </div>
-                     <p className="text-[11px] font-bold text-white/60 leading-relaxed group-hover/item:text-white transition-colors antialiased">
-                       {item.msg}
-                     </p>
-                   </div>
-                </motion.div>
-              ))}
-            </div>
-
-            <Link href="/admin/leads" className="mt-12 pt-8 border-t border-white/5 w-full flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-[0.4em] text-white/10 hover:text-accent transition-all duration-500 group/footer relative z-10">
-              <Activity size={14} className="group-hover/footer:animate-spin" />
-              Access Unified Data Stream
+            <Link href="/admin/leads" className="flex items-center gap-1.5 text-[11px] font-bold text-white/30 hover:text-accent transition-colors">
+              View all <ExternalLink size={11} />
             </Link>
           </div>
+
+          <div className="divide-y divide-white/5">
+            {loading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="py-4 flex items-center gap-4">
+                  <div className="w-9 h-9 rounded-xl bg-white/5 animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-32 bg-white/5 rounded animate-pulse" />
+                    <div className="h-2.5 w-48 bg-white/5 rounded animate-pulse" />
+                  </div>
+                </div>
+              ))
+            ) : recentLeads.length === 0 ? (
+              <div className="py-10 text-center text-white/30 text-sm">No leads yet. Share your contact page!</div>
+            ) : (
+              recentLeads.map((lead, i) => (
+                <motion.div
+                  key={lead.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + i * 0.05 }}
+                  className="py-4 flex items-center gap-4 group"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-white/40 font-bold text-sm shrink-0">
+                    {lead.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-white truncate">{lead.name}</p>
+                      <StatusBadge status={lead.status} />
+                    </div>
+                    <p className="text-[11px] text-white/40 truncate">{lead.concept} · {lead.email}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-[10px] text-white/30">{timeAgo(lead.createdAt)}</p>
+                    <p className="text-[10px] text-white/20">{lead.industry}</p>
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </div>
         </div>
 
-        {/* Global Quick Commands */}
-        <div className="flex flex-wrap items-center justify-center gap-6 pt-8 border-t border-white/5 relative">
-           <p className="absolute -top-3 left-1/2 -translate-x-1/2 px-6 bg-[#050505] text-[9px] font-black uppercase tracking-[0.5em] text-white/10">Quick Diagnostics</p>
-           {[
-            { label: "Neural Forge", icon: Cpu, href: "/admin/agents/generate", detail: "Generate Nodes" },
-            { label: "Media Vault", icon: ImageIcon, href: "/admin/media", detail: "Asset Control" },
-            { label: "Lead Hub", icon: Zap, href: "/admin/leads", detail: "CRM Engagement" },
-            { label: "Portfolio Hub", icon: Briefcase, href: "/admin/portfolio", detail: "Showcase Management" },
-            { label: "Neural Blog", icon: FileText, href: "/admin/blog", detail: "Neural Updates" },
-            { label: "Settings", icon: Terminal, href: "/admin/settings", detail: "System Core" },
-           ].map((cmd) => (
-             <Link 
-              key={cmd.label}
-              href={cmd.href}
-               className="px-8 py-5 bg-white/2 border border-white/5 rounded-4xl flex items-center gap-4 hover:bg-white/5 hover:border-accent/40 hover:shadow-accent-glow-subtle transition-all group min-w-[200px]"
-             >
-               <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/20 group-hover:text-accent group-hover:bg-accent/10 transition-all">
-                 <cmd.icon size={20} />
-               </div>
-               <div className="text-left">
-                 <p className="text-[10px] font-black uppercase tracking-[0.2em] group-hover:text-white transition-colors">{cmd.label}</p>
-                 <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">{cmd.detail}</p>
-               </div>
-             </Link>
-           ))}
+        {/* Quick Links */}
+        <div className="space-y-4">
+          <div className="rounded-2xl bg-white/3 border border-white/8 p-6 space-y-4">
+            <h2 className="text-sm font-bold text-white">Quick Access</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {quickLinks.map((link, i) => (
+                <Link
+                  key={i}
+                  href={link.href}
+                  className="group p-4 rounded-xl bg-white/3 border border-white/8 hover:border-white/20 hover:bg-white/5 transition-all"
+                >
+                  <div className={`w-8 h-8 rounded-lg mb-3 flex items-center justify-center ${link.color} bg-current/10 border border-current/20`}>
+                    <link.icon size={16} className="opacity-70 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                  <p className="text-xs font-bold text-white/80">{link.label}</p>
+                  <p className="text-[11px] text-white/30">{link.desc}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* System Stats */}
+          <div className="rounded-2xl bg-white/3 border border-white/8 p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Activity size={14} className="text-accent" />
+              <h2 className="text-sm font-bold text-white">System Health</h2>
+            </div>
+            {[
+              { label: "Database", value: 100, color: "bg-emerald-400" },
+              { label: "API Routes", value: 98, color: "bg-accent" },
+              { label: "Agent Core", value: 95, color: "bg-blue-400" },
+            ].map((item, i) => (
+              <div key={i} className="space-y-1.5">
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-white/50">{item.label}</span>
+                  <span className="text-white/40 font-medium">{item.value}%</span>
+                </div>
+                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${item.value}%` }}
+                    transition={{ delay: 0.5 + i * 0.1, duration: 1.2, ease: "easeOut" }}
+                    className={`h-full rounded-full ${item.color}`}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Performance Mini-Chart */}
+          <div className="rounded-2xl bg-white/3 border border-white/8 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp size={14} className="text-accent" />
+                <h2 className="text-sm font-bold text-white">Lead Pulse</h2>
+              </div>
+            </div>
+            <div className="flex items-end gap-1.5 h-16">
+              {[30, 55, 40, 80, 65, 90, 70, 85, 75, 100, 60, 95].map((h, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ height: 0 }}
+                  animate={{ height: `${h}%` }}
+                  transition={{ delay: 0.6 + i * 0.04, duration: 0.7 }}
+                  className="flex-1 rounded-sm bg-accent/30 hover:bg-accent/60 transition-colors cursor-default"
+                />
+              ))}
+            </div>
+            <p className="text-[10px] text-white/20 uppercase tracking-wider">Last 12 weeks — relative activity</p>
+          </div>
         </div>
       </div>
     </div>

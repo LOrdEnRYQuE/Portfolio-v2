@@ -1,33 +1,27 @@
-// Forced re-evaluation of auth import
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
+// GET /api/admin/settings - Get all global settings
 export async function GET() {
-  const session = await getServerSession(authOptions);
-
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
-    const configs = await prisma.siteConfig.findMany();
-    // Convert array to object
-    const configObj = configs.reduce((acc: Record<string, string>, curr: { key: string, value: string }) => {
-      acc[curr.key] = curr.value;
-      return acc;
-    }, {});
-    return NextResponse.json(configObj);
+    const settings = await prisma.siteConfig.findMany();
+    // Convert array to key-value object
+    const config = settings.reduce((acc, curr) => ({
+      ...acc,
+      [curr.key]: curr.value
+    }), {});
+    
+    return NextResponse.json(config);
   } catch (error) {
-    console.error("Failed to fetch settings:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch settings" }, { status: 500 });
   }
 }
 
+// POST /api/admin/settings - Update/Save settings
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -35,20 +29,19 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
     
-    // Update multiple configs in a transaction
-    const upserts = Object.entries(data).map(([key, value]) => {
+    // Perform bulk updates/creates
+    const promises = Object.entries(data).map(([key, value]) => {
       return prisma.siteConfig.upsert({
         where: { key },
         update: { value: String(value) },
-        create: { key, value: String(value) },
+        create: { key, value: String(value) }
       });
     });
 
-    await prisma.$transaction(upserts);
-    
+    await Promise.all(promises);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to save settings:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Settings error:", error);
+    return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
   }
 }

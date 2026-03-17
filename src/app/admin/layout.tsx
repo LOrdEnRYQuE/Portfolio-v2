@@ -18,13 +18,14 @@ import {
   FileText,
   FolderKanban,
   Briefcase,
-  Scale
+  Scale,
+  Layout,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
 import { CommandBar } from "@/components/admin/CommandBar";
-import { NeuralOnboarding } from "@/components/admin/NeuralOnboarding";
+import { LOrdEnRYQuEOnboarding } from "@/components/admin/LOrdEnRYQuEOnboarding";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -48,7 +49,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       items: [
         { href: "/admin", label: "Overview", icon: Activity },
         { href: "/admin/agents", label: "Agent Fleet", icon: Bot },
-        { href: "/admin/agents/generate", label: "Neural Forge", icon: Cpu },
+        { href: "/admin/agents/generate", label: "LOrdEnRYQuE Forge", icon: Cpu },
       ]
     },
     {
@@ -56,7 +57,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       items: [
         { href: "/admin/projects", label: "Project Command", icon: FolderKanban },
         { href: "/admin/portfolio", label: "Portfolio Hub", icon: Briefcase },
-        { href: "/admin/blog", label: "Neural Blog", icon: FileText },
+        { href: "/admin/blog", label: "LOrdEnRYQuE Blog", icon: FileText },
         { href: "/admin/media", label: "Media Vault", icon: ImageIcon },
       ]
     },
@@ -65,6 +66,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       items: [
         { href: "/admin/leads", label: "Lead Hub", icon: Zap },
         { href: "/admin/users", label: "User Fleet", icon: ShieldCheck },
+        { href: "/admin/pages", label: "Pages", icon: Layout },
         { href: "/admin/legal", label: "Legal Policy", icon: Scale },
       ]
     },
@@ -90,7 +92,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <div>
               <p className="text-sm font-black tracking-tighter uppercase italic leading-tight">Control<span className="text-accent underline decoration-2 underline-offset-4">Panel</span></p>
-              <p className="text-[8px] text-white/20 font-black tracking-[0.4em] uppercase">Neural Command v3.0</p>
+              <p className="text-[8px] text-white/20 font-black tracking-[0.4em] uppercase">LOrdEnRYQuE Command v3.0</p>
             </div>
           </Link>
 
@@ -191,7 +193,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <main className="flex-1 lg:pl-72 relative z-10">
         <div className="absolute inset-0 bg-linear-to-b from-accent/2 to-transparent pointer-events-none" />
         <CommandBar />
-        <NeuralOnboarding />
+        <LOrdEnRYQuEOnboarding />
         {children}
       </main>
     </div>

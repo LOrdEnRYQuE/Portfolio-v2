@@ -1,17 +1,20 @@
 import { google } from "@ai-sdk/google";
-import { generateText } from "ai";
-import { NextResponse } from "next/server";
+import { streamText } from "ai";
 import { prisma } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
-    const { message, agentId, config } = await req.json();
+    const { messages, agentId, config, context } = await req.json();
 
-    if (!message) {
-      return NextResponse.json({ error: "Message is required" }, { status: 400 });
+    if (!messages || !Array.isArray(messages)) {
+      return new Response("Messages array is required", { status: 400 });
     }
 
     let systemPrompt = "You are a professional AI Concierge for a premium portfolio. Your tone is sophisticated, helpful, and 'Dark Luxury'.";
+    
+    if (context?.url) {
+      systemPrompt += `\nThe user is currently viewing the page entitled "${context.title || 'Untitled'}" at ${context.url}. Use this information to providing relevant assistance.`;
+    }
     
     if (agentId) {
       const agent = await prisma.agent.findUnique({
@@ -26,15 +29,15 @@ export async function POST(req: Request) {
       Your purpose is: ${config.description || ''}`;
     }
 
-    const { text } = await generateText({
+    const result = streamText({
       model: google("gemini-2.0-flash-001"),
       system: systemPrompt,
-      prompt: message,
+      messages,
     });
 
-    return NextResponse.json({ text });
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error("[CHAT_API]", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return new Response("Internal Server Error", { status: 500 });
   }
 }

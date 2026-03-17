@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import { projects } from "@/content/projects";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -8,7 +9,6 @@ import { Button } from "@/components/ui/Button";
 import { ArrowLeft, ExternalLink, Github } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
 
 interface PortfolioProject {
   id: string;
@@ -28,8 +28,9 @@ interface PortfolioProject {
   updatedAt?: string;
 }
 
-export default function ProjectDetailPage({ params }: { params: { slug: string } }) {
+export default function ProjectDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { t } = useI18n();
+  const { slug } = React.use(params);
   const [dynamicProject, setDynamicProject] = useState<PortfolioProject | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,7 +38,7 @@ export default function ProjectDetailPage({ params }: { params: { slug: string }
     fetch(`/api/portfolio`)
       .then(res => res.json())
       .then(data => {
-        const found = (data as PortfolioProject[]).find(p => p.slug === params.slug);
+        const found = (data as PortfolioProject[]).find(p => p.slug === slug);
         if (found) setDynamicProject(found);
         setLoading(false);
       })
@@ -45,10 +46,10 @@ export default function ProjectDetailPage({ params }: { params: { slug: string }
         console.error("Failed to fetch project:", err);
         setLoading(false);
       });
-  }, [params.slug]);
+  }, [slug]);
 
-  const staticProject = projects.find((p) => p.slug === params.slug);
-  const project = dynamicProject || (staticProject as any);
+  const staticProject = projects.find((p) => p.slug === slug);
+  const project = dynamicProject || (staticProject as PortfolioProject);
 
   if (!project && !loading) return notFound();
   if (loading && !staticProject) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;

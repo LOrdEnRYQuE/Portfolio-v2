@@ -22,13 +22,13 @@ interface Step {
 
 const STEPS: Step[] = [
   {
-    title: "Neural Command Overview",
+    title: "LOrdEnRYQuE Command Overview",
     description: "Welcome to the Level 4 Oversight center. This is your primary node for managing the L'ORDRE AI ecosystem.",
     icon: Activity,
     detail: "Monitor real-time data flux and agent performance at a glance."
   },
   {
-    title: "Neural Search Engine",
+    title: "Intelligence Search Engine",
     description: "Access a global command palette via ⌘K to instantly query agents, projects, leads, and assets.",
     icon: Search,
     detail: "A direct link to every data synapse in the system."
@@ -43,11 +43,11 @@ const STEPS: Step[] = [
     title: "System Calibration",
     description: "Adjust site-wide parameters, visual branding, and core thresholds in the Global Settings.",
     icon: Cpu,
-    detail: "Synchronize your vision with the underlying neural architecture."
+    detail: "Synchronize your vision with the underlying platform architecture."
   }
 ];
 
-export function NeuralOnboarding() {
+export function LOrdEnRYQuEOnboarding() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -169,7 +169,7 @@ export function NeuralOnboarding() {
                 <div className="space-y-4">
                   <h2 className="text-5xl font-black tracking-tighter uppercase italic">System Calibrated</h2>
                   <p className="text-white/40 text-sm max-w-sm mx-auto uppercase tracking-widest leading-loose">
-                    The Level 4 neural link is now stable. You have complete oversight of the L&apos;ORDRE platform.
+                    The Level 4 intelligence link is now stable. You have complete oversight of the L&apos;ORDRE platform.
                   </p>
                 </div>
                 <button 
