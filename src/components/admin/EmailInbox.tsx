@@ -12,11 +12,7 @@ import {
   Search, 
   MoreVertical, 
   Reply, 
-  Forward, 
-  Inbox,
-  Send,
-  FileText,
-  ShieldAlert
+  Forward
 } from "lucide-react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,9 +39,8 @@ export default function EmailInbox() {
   
   const updateStatus = useMutation(api.emails.updateStatus);
   const moveFolder = useMutation(api.emails.moveFolder);
-  const removeEmail = useMutation(api.emails.remove);
 
-  const selectedEmail = emails.find(e => e._id === selectedEmailId);
+  const selectedEmail = emails.find((e: Doc<"emails">) => e._id === selectedEmailId);
 
   const handleSelectEmail = (email: Doc<"emails">) => {
     setSelectedEmailId(email._id);
@@ -151,7 +146,7 @@ export default function EmailInbox() {
               <p className="text-xs">No emails in {activeFolder.toLowerCase()}</p>
             </div>
           ) : (
-            filteredEmails.map((email) => (
+            filteredEmails.map((email: Doc<"emails">) => (
               <button
                 key={email._id}
                 onClick={() => handleSelectEmail(email)}
