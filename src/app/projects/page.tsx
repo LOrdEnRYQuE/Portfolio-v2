@@ -46,7 +46,7 @@ export default function ProjectsPage() {
     : projects.map(p => ({ ...p, _id: p.slug } as PortfolioProject));
 
   return (
-    <div className="py-24 px-6 md:px-10 max-w-7xl mx-auto min-h-screen">
+    <div className="pt-40 pb-24 px-6 md:px-10 max-w-7xl mx-auto min-h-screen">
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}

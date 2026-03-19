@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
-import { siteConfig } from "@/content/site";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@convex/_generated/api";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL || process.env.CONVEX_URL || "https://jovial-ibex-866.eu-west-1.convex.cloud");
 
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key_for_builds");
+// Import email system
+import { sendEmail, emailTargets } from "@/lib/email";
+import { AdminNewLeadEmail } from "@/components/emails/AdminNewLeadEmail";
+import { ClientConfirmationEmail } from "@/components/emails/ClientConfirmationEmail";
 
 export async function POST(req: Request) {
   try {
@@ -45,53 +45,61 @@ export async function POST(req: Request) {
       console.error("Failed to persist lead to Convex:", dbError);
     }
 
-    // 2. Attempt to send email using Resend
-    if (!process.env.RESEND_API_KEY) {
-      console.log("No RESEND_API_KEY found. Simulation mode enabled.");
-      return NextResponse.json({ 
-        success: true, 
-        message: "Lead recorded (Simulation).",
-        leadId 
-      }, { status: 200 });
-    }
+    const parsedFeatures = features ? JSON.parse(features) : [];
 
-    const emailContent = `
-Mission Briefing: New Lead Captured
-
-Identity: ${name} (${email})
-Mission: ${concept || "Direct Sync"}
-Industry: ${industry || "N/A"}
-
-Objectives/Features:
-${features ? JSON.parse(features).join(", ") : "Standard Build"}
-
-Description:
-${description || "No additional data provided."}
-
-Logistics:
-- Timeline: ${timeline || "TBD"}
-- Budget: ${budget || "TBD"}
-- Tech Stack: ${stack || "TBD"}
-    `;
-
-    const { data, error } = await resend.emails.send({
-      from: `${siteConfig.name} Portfolio <onboarding@resend.dev>`,
-      to: [process.env.CONTACT_EMAIL || "lordenryque.dev@gmail.com"],
+    // 2. Send Notifications via the new Email System
+    // Notification for Admin
+    await sendEmail({
+      to: emailTargets.admin,
       subject: `[LEAD] ${concept || "New Sync"} - ${name}`,
-      text: emailContent,
+      react: (AdminNewLeadEmail({
+        leadName: name,
+        leadEmail: email,
+        concept: concept || "Standard Inquiry",
+        industry: industry || "Startup",
+        description: description || "No additional data provided.",
+        features: parsedFeatures,
+        timeline: timeline || "TBD",
+        budget: budget || "TBD",
+      }) as React.ReactElement),
+      text: `New lead from ${name}: ${concept}. Contact: ${email}`,
     });
 
-    if (error) {
-      console.error("Resend API Error:", error);
-      return NextResponse.json({ 
-        success: true, 
-        message: "Lead recorded, but email notification failed.",
-        leadId,
-        emailError: error 
-      }, { status: 200 });
+    // Confirmation for Client
+    await sendEmail({
+      to: email,
+      subject: `Mission Received: ${concept || "Your Inquiry"}`,
+      react: (ClientConfirmationEmail({
+        clientName: name,
+        concept: concept || "your project",
+      }) as React.ReactElement),
+      text: `Hello ${name}, we've received your inquiry for ${concept}. We'll get back to you soon!`,
+    });
+
+    // 3. [Unified Inbox] Log inquiry as an internal email in Convex
+    try {
+      await convex.mutation(api.emails.create, {
+        from: email,
+        to: emailTargets.admin,
+        subject: `[INQUIRY] ${concept || "New Project"}`,
+        body: `
+          <h3>New Lead Inquiry from ${name}</h3>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Concept:</strong> ${concept || 'Standard'}</p>
+          <p><strong>Budget:</strong> ${budget || 'Not specified'}</p>
+          <p><strong>Timeline:</strong> ${timeline || 'Not specified'}</p>
+          <hr/>
+          <p>${description || 'No description provided'}</p>
+          <p><strong>Tech/Features:</strong> ${parsedFeatures.join(', ')}</p>
+        `,
+        folder: "INBOX",
+        metadata: JSON.stringify({ name, project: concept, type: "lead" }),
+      });
+    } catch (emailLogError) {
+      console.error("Failed to log internal email index:", emailLogError);
     }
 
-    return NextResponse.json({ success: true, message: "Lead recorded and email sent.", leadId, data }, { status: 200 });
+    return NextResponse.json({ success: true, message: "Lead recorded and notifications dispatched.", leadId }, { status: 200 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Internal Server Error";
     console.error("Contact API Route Error:", error);

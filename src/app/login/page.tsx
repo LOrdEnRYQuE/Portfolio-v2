@@ -33,12 +33,16 @@ export default function LoginPage() {
       if (res?.error) {
         setError(res.error);
       } else {
-        router.push("/client");
-        // NOTE: The original instruction included `setError(data || "Failed to update profile");` here.
-        // However, `data` is not defined in this scope, and setting an error after a successful login
-        // and redirect is contradictory. The original `router.refresh()` was removed as per instruction.
-        // If `data` was intended to be a variable from the `signIn` response, it's not available directly here.
-        // For now, this line is omitted to maintain syntactic correctness and logical flow for a login page.
+        // Fetch session to determine user role for redirect
+        const sessionRes = await fetch("/api/auth/session");
+        const session = await sessionRes.json();
+        const role = session?.user?.role;
+
+        if (role === "ADMIN") {
+          router.push("/admin");
+        } else {
+          router.push("/client");
+        }
       }
     } catch {
       setError("Network error: synchronization failed");

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, memo } from "react";
 import { usePathname } from "next/navigation";
-import { m, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Globe, LogOut } from "lucide-react";
 import { siteConfig } from "@/content/site";
 import { useI18n } from "@/lib/i18n";
@@ -12,7 +12,7 @@ import { useSession, signOut } from "next-auth/react";
 const BubbleEffect = memo(({ count = 12, isMobile = false }: { count?: number; isMobile?: boolean }) => (
   <div className="absolute inset-0 pointer-events-none overflow-hidden">
     {[...Array(count)].map((_, i) => (
-      <m.div
+      <motion.div
         key={`bubble-${isMobile ? 'm' : 'd'}-${i}`}
         animate={{
           y: isMobile ? [-15, 90, -15] : [-30, 120, -30],
@@ -45,7 +45,7 @@ const BubbleEffect = memo(({ count = 12, isMobile = false }: { count?: number; i
       />
     ))}
     
-    <m.div
+    <motion.div
       animate={{
         background: [
           "linear-gradient(45deg, rgba(148,163,184,0.12) 0%, transparent 30%, rgba(59,130,246,0.08) 60%, transparent 100%)",
@@ -72,7 +72,7 @@ export default function Navbar() {
   const { locale, setLocale, t } = useI18n();
   const [dynamicLinks, setDynamicLinks] = useState<{ href: string; label: string }[]>([]);
   const [brand, setBrand] = useState(siteConfig.brand);
-  const { data: session, status } = useSession();
+  const { status } = useSession();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -105,12 +105,9 @@ export default function Navbar() {
     { href: "/demo-branches", label: t("nav.demos") },
   ];
 
-  const adminLinks = status === "authenticated" ? [
-    ...(session?.user?.role === "ADMIN" ? [{ href: "/admin", label: "Control Panel" }] : []),
-    { href: "/client", label: t("nav.client_area") },
-  ] : [];
+  const allLinks = [...systemLinks, ...dynamicLinks];
 
-  const allLinks = [...systemLinks, ...dynamicLinks, ...adminLinks];
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/client")) return null;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50" role="banner">
@@ -142,7 +139,7 @@ export default function Navbar() {
                   >
                     {link.label}
                     {isActive && (
-                      <m.div
+                      <motion.div
                         layoutId="nav-active"
                         className="absolute -bottom-1 left-0 right-0 h-0.5 bg-accent-blue rounded-full"
                         transition={{ type: "spring", stiffness: 380, damping: 30 }}
@@ -200,7 +197,7 @@ export default function Navbar() {
 
         <AnimatePresence>
           {mobileOpen && (
-            <m.div
+            <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -267,7 +264,7 @@ export default function Navbar() {
                   )}
                 </div>
               </div>
-            </m.div>
+            </motion.div>
           )}
         </AnimatePresence>
       </nav>

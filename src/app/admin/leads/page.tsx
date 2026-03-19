@@ -2,319 +2,294 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "@convex/_generated/api";
-import { Id } from "@convex/_generated/dataModel";
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
+import DataTable, { Column } from "@/components/dashboard/DataTable";
+import StatusBadge from "@/components/dashboard/StatusBadge";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Zap, 
-  Search, 
-  Filter, 
-  MoreHorizontal, 
-  Mail, 
-  Layers,
-  Clock,
-  Archive,
-  ArrowRight,
-  X,
-  Loader2,
-  CheckCircle2
-} from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { Button } from "@/components/ui/Button";
+import { X, Mail, Briefcase, Rocket, Cog, Clock, Trash2, UserPlus, Receipt, FileText } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-export default function LeadHub() {
+const STATUSES = ["NEW", "CONTACTED", "QUALIFIED", "CONVERTED", "LOST"];
+
+interface Lead {
+  _id: Id<"leads">;
+  _creationTime: number;
+  name: string;
+  email: string;
+  concept: string;
+  industry: string;
+  status: string;
+  description?: string;
+  features?: string;
+  timeline?: string;
+  budget?: string;
+  stack?: string;
+}
+
+export default function AdminLeadsPage() {
+  const router = useRouter();
   const leads = useQuery(api.leads.listAll) || [];
-  const updateStatusManual = useMutation(api.leads.update);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const [contactNote, setContactNote] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const updateLead = useMutation(api.leads.update);
+  const removeLead = useMutation(api.leads.remove);
+  const convertToClient = useMutation(api.leads.convertToClient);
+  
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [converting, setConverting] = useState(false);
 
-  const selectedLead = leads.find(l => l._id === selectedId) || null;
-
-  const handleInitializeContact = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleConvert = async (type: "invoice" | "contract") => {
     if (!selectedLead) return;
-    setIsSubmitting(true);
-
+    setConverting(true);
     try {
-      await updateStatusManual({
-        id: selectedLead._id as Id<"leads">,
-        status: "CONTACTED"
+      const userId = await convertToClient({ id: selectedLead._id });
+      
+      // Trigger Welcome Email
+      await fetch("/api/emails/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "welcome",
+          data: {
+            clientName: selectedLead.name,
+            clientEmail: selectedLead.email,
+          }
+        })
       });
-      setIsContactModalOpen(false);
-      setContactNote("");
-    } catch (e) {
-      console.error("Contact initialization failed", e);
+
+      const target = type === "invoice" ? "/admin/invoices/new" : "/admin/contracts/new";
+      router.push(`${target}?leadId=${selectedLead._id}&userId=${userId}`);
+    } catch (error) {
+      console.error("Conversion failed:", error);
     } finally {
-      setIsSubmitting(false);
+      setConverting(false);
     }
   };
 
-  const handleStatusUpdate = async (id: string, newStatus: string) => {
-    try {
-      await updateStatusManual({
-        id: id as Id<"leads">,
-        status: newStatus
-      });
-    } catch (e) {
-      console.error("Failed to update lead status", e);
-    }
+  const handleStatusChange = async (id: Id<"leads">, status: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    await updateLead({ id, status });
   };
 
-  const filteredLeads = leads.filter(l => 
-    l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    l.concept.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    l.industry.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "NEW": return "text-accent bg-accent/10 border-accent/20";
-      case "CONTACTED": return "text-emerald-400 bg-emerald-400/10 border-emerald-400/20";
-      case "ARCHIVED": return "text-white/20 bg-white/5 border-white/10";
-      default: return "text-white/40 bg-white/5 border-white/10";
-    }
-  };
+  const columns: Column<Lead>[] = [
+    { key: "name", label: "Name", render: (item) => (
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white/40">
+          {item.name.charAt(0)}
+        </div>
+        <span className="font-medium text-white">{item.name}</span>
+      </div>
+    )},
+    { key: "email", label: "Email" },
+    { key: "concept", label: "Concept", render: (item) => (
+      <span className="text-white/60 italic">&quot;{item.concept}&quot;</span>
+    )},
+    { key: "industry", label: "Industry" },
+    {
+      key: "status",
+      label: "Status",
+      render: (item) => (
+        <select
+          value={item.status}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => handleStatusChange(item._id, e.target.value)}
+          className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white outline-none cursor-pointer focus:border-white/20 transition-all font-medium"
+        >
+          {STATUSES.map((s) => (
+            <option key={s} value={s} className="bg-neutral-900">{s}</option>
+          ))}
+        </select>
+      ),
+    },
+    {
+      key: "actions",
+      label: "",
+      render: (item) => (
+        <button
+          onClick={(e) => { 
+            e.stopPropagation();
+            if (confirm("Delete this lead?")) removeLead({ id: item._id }); 
+          }}
+          className="p-2 text-red-400/30 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+        >
+          <Trash2 size={14} />
+        </button>
+      ),
+    },
+  ];
 
   return (
-    <div className="min-h-screen p-8 sm:p-12 lg:p-16 space-y-12">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-        <div className="space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-[8px] font-black uppercase tracking-[0.2em]">
-            <Zap size={10} /> Oversight Protocol Active
-          </div>
-          <h1 className="text-5xl font-black tracking-tighter uppercase italic">
-            Lead <span className="text-accent underline underline-offset-8">Hub</span>
-          </h1>
-          <p className="text-white/40 text-sm max-w-xl leading-relaxed italic border-l-2 border-white/5 pl-4 ml-1">
-            Analyzing inbound Blueprint Forge requests and client synchronization requirements.
-          </p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">CRM / Leads</h1>
+          <p className="text-sm text-white/40 mt-1">{leads.length} total leads found</p>
         </div>
-
-        <div className="flex items-center gap-4">
-          <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-accent transition-colors" size={16} />
-            <input 
-              type="text"
-              placeholder="Filter Synapses..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-xs font-bold focus:outline-hidden focus:border-accent/40 focus:bg-white/7 transition-all w-full md:w-64"
-            />
-          </div>
-          <button className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:text-accent hover:border-accent/20 transition-all">
-            <Filter size={18} />
-          </button>
+        <div className="flex gap-2">
+          {STATUSES.map((s) => {
+            const count = leads.filter((l) => l.status === s).length;
+            return count > 0 ? (
+              <StatusBadge key={s} status={`${s} (${count})`} />
+            ) : null;
+          })}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          {!leads.length && !searchTerm ? (
-            <div className="p-12 text-center text-white/20 font-black tracking-widest uppercase animate-pulse">
-              Scanning Neural Flux...
-            </div>
-          ) : filteredLeads.length === 0 ? (
-            <div className="glass-card p-12 text-center rounded-[32px] border-white/5">
-              <Archive className="mx-auto text-white/10 mb-4" size={48} />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">No Lead Patterns Detected</p>
-            </div>
-          ) : (
-            filteredLeads.map((lead) => (
-              <motion.div
-                key={lead._id}
-                layoutId={lead._id}
-                onClick={() => setSelectedId(lead._id)}
-                className={`glass-card p-6 rounded-[24px] border-white/5 cursor-pointer group hover:bg-white/2 hover:border-accent/30 transition-all flex items-center gap-6 ${selectedLead?._id === lead._id ? 'border-accent/40 bg-accent/5' : ''}`}
-              >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all ${getStatusColor(lead.status)}`}>
-                  <Layers size={20} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-black text-sm uppercase truncate group-hover:text-accent transition-colors">{lead.concept}</h3>
-                    <span className="text-[8px] font-black tracking-tighter text-white/20">
-                      {formatDistanceToNow(new Date(lead._creationTime))} ago
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-tighter truncate">{lead.name}</p>
-                    <div className="w-1 h-1 rounded-full bg-white/10" />
-                    <p className="text-[10px] font-bold text-accent uppercase tracking-tighter">{lead.industry}</p>
-                  </div>
-                </div>
-                <ArrowRight size={16} className="text-white/10 group-hover:text-accent group-hover:translate-x-1 transition-all" />
-              </motion.div>
-            ))
-          )}
-        </div>
-
-        <AnimatePresence mode="wait">
-          {selectedLead ? (
-            <motion.div
-              key={selectedLead._id}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="glass-card rounded-[40px] border-white/10 p-10 space-y-8 sticky top-32"
-            >
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] ${getStatusColor(selectedLead.status)}`}>
-                    {selectedLead.status}
-                  </div>
-                  <h2 className="text-3xl font-black uppercase tracking-tighter italic leading-none">{selectedLead.concept}</h2>
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => handleStatusUpdate(selectedLead._id, "CONTACTED")}
-                    className={`p-3 border rounded-2xl transition-all ${selectedLead.status === "CONTACTED" ? 'bg-emerald-400/20 border-emerald-400 text-emerald-400' : 'bg-white/5 border-white/5 text-white/40 hover:text-white'}`}
-                    title="Mark as Contacted"
-                  >
-                    <Mail size={18} />
-                  </button>
-                  <button 
-                    onClick={() => handleStatusUpdate(selectedLead._id, "ARCHIVED")}
-                    className={`p-3 border rounded-2xl transition-all ${selectedLead.status === "ARCHIVED" ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/5 text-white/40 hover:text-white'}`}
-                    title="Archive Lead"
-                  >
-                    <Archive size={18} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                  <p className="text-[8px] font-black uppercase tracking-widest text-white/20 mb-1">Involved Client</p>
-                  <p className="text-xs font-bold truncate">{selectedLead.name}</p>
-                  <p className="text-[10px] text-white/40 font-medium truncate">{selectedLead.email}</p>
-                </div>
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                  <p className="text-[8px] font-black uppercase tracking-widest text-white/20 mb-1">Target Niche</p>
-                  <p className="text-xs font-bold text-accent uppercase italic truncate">{selectedLead.industry}</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 text-white/20">
-                  <Clock size={14} className="text-accent" />
-                  <p className="text-[9px] font-black uppercase tracking-widest text-white/40">Implementation Window: <span className="text-white">{selectedLead.timeline || "N/A"}</span></p>
-                </div>
-                <div className="flex items-center gap-3 text-white/20">
-                  <Layers size={14} className="text-accent" />
-                  <p className="text-[9px] font-black uppercase tracking-widest text-white/40">Tech Stack: <span className="text-white">{selectedLead.stack || "N/A"}</span></p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 border-b border-white/5 pb-2">Concept Description</p>
-                   &ldquo;{selectedLead.description || "No detailed transmission received."}&rdquo;
-              </div>
-
-              <div className="space-y-4">
-                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 border-b border-white/5 pb-2">Requested Modules</p>
-                  <div className="flex flex-wrap gap-2">
-                    {(() => {
-                      try {
-                        const features = typeof selectedLead.features === 'string' ? JSON.parse(selectedLead.features) : selectedLead.features;
-                        return Array.isArray(features) ? features.map((f: string, i: number) => (
-                          <span key={i} className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold text-white/40 group hover:border-accent/40 transition-colors">
-                            {f}
-                          </span>
-                        )) : null;
-                      } catch {
-                        return <span className="text-[10px] text-white/20 uppercase">No parsable modules</span>;
-                      }
-                    })()}
-                  </div>
-              </div>
-
-              <div className="pt-6 border-t border-white/5 flex gap-4">
-                 <button 
-                  onClick={() => setIsContactModalOpen(true)}
-                  disabled={selectedLead.status === "CONTACTED"}
-                  className={`flex-1 font-black uppercase tracking-[0.2em] py-4 rounded-2xl text-[11px] italic flex items-center justify-center gap-3 transition-all ${
-                    selectedLead.status === "CONTACTED" 
-                    ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 cursor-default" 
-                    : "bg-accent text-white hover:shadow-accent-glow"
-                  }`}
-                 >
-                    {selectedLead.status === "CONTACTED" ? (
-                      <>Sync Established <CheckCircle2 size={16} /></>
-                    ) : (
-                      <>Initialize Contact <ArrowRight size={16} /></>
-                    )}
-                 </button>
-                 <button className="w-14 h-14 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center text-white/40 hover:text-white transition-all">
-                    <MoreHorizontal size={20} />
-                 </button>
-              </div>
-            </motion.div>
-          ) : (
-            <div className="h-full flex items-center justify-center text-center p-12">
-               <div className="space-y-4 opacity-[0.15]">
-                  <Layers size={80} className="mx-auto" />
-                  <p className="text-xs font-black uppercase tracking-[0.4em]">Select Synapse for Deep Analysis</p>
-               </div>
-            </div>
-          )}
-        </AnimatePresence>
-      </div>
+      <DataTable
+        columns={columns}
+        data={leads as Lead[]}
+        searchKey="name"
+        onRowClick={(lead) => setSelectedLead(lead)}
+        emptyMessage="No leads yet — share your contact page!"
+      />
 
       <AnimatePresence>
-        {isContactModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-8 bg-black/90 backdrop-blur-xl">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="glass-card w-full max-w-lg rounded-[48px] border-white/10 p-12 space-y-8 relative overflow-hidden"
+        {selectedLead && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedLead(null)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             >
-              <div className="flex items-center justify-between mb-2">
-                <div className="space-y-1">
-                  <h2 className="text-3xl font-black uppercase tracking-tighter italic leading-none">Neural <span className="text-accent">Briefing</span></h2>
-                  <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Protocol initialization for {selectedLead?.name}</p>
-                </div>
-                <button onClick={() => setIsContactModalOpen(false)} className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors">
-                  <X size={20} className="text-white/40" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                 <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                    <p className="text-[8px] font-black uppercase tracking-widest text-accent mb-1">Target Synapse</p>
-                    <p className="text-xs font-bold">{selectedLead?.concept}</p>
-                    <p className="text-[10px] text-white/40 font-medium">{selectedLead?.email}</p>
-                 </div>
-              </div>
-
-              <form onSubmit={handleInitializeContact} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-white/20 ml-2">Transmission Dispatch Note</label>
-                  <textarea 
-                    value={contactNote}
-                    onChange={(e) => setContactNote(e.target.value)}
-                    placeholder="Log details of the neural handshake..."
-                    className="w-full h-32 bg-white/5 border border-white/5 rounded-3xl py-6 px-8 text-xs font-bold focus:border-accent/40 outline-none transition-all resize-none placeholder:text-white/10"
-                  />
-                </div>
-
-                <div className="pt-4">
-                  <Button 
-                    type="submit" 
-                    disabled={isSubmitting}
-                    className="w-full py-8 rounded-3xl font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3"
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-2xl bg-neutral-950 border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+              >
+                {/* Modal Header */}
+                <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-white/2">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-white/10 to-transparent border border-white/10 flex items-center justify-center text-xl font-bold text-white">
+                      {selectedLead.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-white">{selectedLead.name}</h2>
+                      <p className="text-sm text-white/40">{selectedLead.industry} • {selectedLead.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedLead(null)}
+                    className="p-2 hover:bg-white/5 rounded-xl text-white/40 hover:text-white transition-all"
                   >
-                    {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <>Execute Initialization <Zap size={18} /></>}
-                  </Button>
+                    <X size={20} />
+                  </button>
                 </div>
-              </form>
+
+                {/* Modal Content */}
+                <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                  {/* The Concept */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">
+                      <Briefcase size={12} />
+                      The Concept
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white/3 border border-white/5">
+                      <p className="text-lg font-medium text-white/90">&quot;{selectedLead.concept}&quot;</p>
+                      {selectedLead.description && (
+                        <p className="mt-2 text-sm text-white/50 leading-relaxed uppercase tracking-wide">
+                          {selectedLead.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Features & Tech */}
+                  <div className="grid grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">
+                        <Cog size={12} />
+                        Targeted Features
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(() => {
+                          try {
+                            const features = JSON.parse(selectedLead.features || "[]");
+                            return features.map((f: string, i: number) => (
+                              <span key={i} className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] text-white/60">
+                                {f}
+                              </span>
+                            ));
+                          } catch {
+                            return <span className="text-white/20 italic text-xs">No specific features selected</span>;
+                          }
+                        })()}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">
+                        <Clock size={12} />
+                        Expected Launch
+                      </div>
+                      <div className="p-4 rounded-2xl bg-white/3 border border-white/5 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
+                          <Rocket size={14} />
+                        </div>
+                        <span className="text-sm font-medium text-white/80">{selectedLead.timeline || "TBD"}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                    <div className="flex gap-3">
+                      <a
+                        href={`mailto:${selectedLead.email}`}
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-sm hover:bg-white/10 transition-all"
+                      >
+                        <Mail size={16} />
+                        Email
+                      </a>
+                      
+                      {selectedLead.status !== "CONVERTED" ? (
+                        <>
+                          <button
+                            onClick={() => handleConvert("invoice")}
+                            disabled={converting}
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-500 text-white font-bold text-sm hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                          >
+                            <Receipt size={16} />
+                            {converting ? "Processing..." : "Convert & Invoice"}
+                          </button>
+                          <button
+                            onClick={() => handleConvert("contract")}
+                            disabled={converting}
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-sm hover:bg-emerald-500/20 transition-all disabled:opacity-50"
+                          >
+                            <FileText size={16} />
+                            Generate Contract
+                          </button>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-emerald-400 font-bold text-sm">
+                          <UserPlus size={16} />
+                          Converted to Client
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                       <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Status</span>
+                       <select
+                        value={String(selectedLead.status)}
+                        onChange={(e) => handleStatusChange(selectedLead._id as Id<"leads">, e.target.value)}
+                        className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white outline-none cursor-pointer hover:border-white/20 transition-all"
+                      >
+                        {STATUSES.map((s) => (
+                          <option key={s} value={s} className="bg-neutral-900">{s}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
-          </div>
+          </>
         )}
       </AnimatePresence>
     </div>
   );
 }
+

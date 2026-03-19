@@ -14,7 +14,7 @@ export default async function BlogPage() {
       </div>
 
       {/* Header Section */}
-      <header className="relative z-10 pt-20 pb-12 px-6 text-center">
+      <header className="relative z-10 pt-32 pb-12 px-6 text-center">
         <div className="max-w-4xl mx-auto space-y-4">
           <div className="inline-block px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm">
             <span className="text-xs font-black tracking-[0.3em] uppercase text-accent-silver">

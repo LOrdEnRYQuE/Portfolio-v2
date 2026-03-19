@@ -1,6 +1,6 @@
 "use client";
 
-import { m } from "framer-motion";
+import { motion } from "framer-motion";
 import { Mail, MessageSquare, MapPin, Sparkles, ArrowRight } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import InquiryWizard from "@/components/sections/InquiryWizard";
@@ -15,26 +15,26 @@ export default function ContactPage() {
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-accent/10 blur-[130px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none opacity-50" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/10 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none opacity-30" />
 
-      <section className="pt-32 pb-20 px-4 md:px-10 relative z-10">
+      <section className="pt-40 pb-20 px-4 md:px-10 relative z-10">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-12 gap-16 items-start">
             
             {/* Left Column: Visual & Contact Info */}
-            <m.div 
+            <motion.div 
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
               className="lg:col-span-5 space-y-12"
             >
               <div>
-                <m.div 
+                <motion.div 
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-black uppercase tracking-[0.2em] mb-8 shadow-accent-glow/5"
                 >
                   <Sparkles size={14} className="animate-pulse" />
                   Direct Connection
-                </m.div>
+                </motion.div>
                 
                 <h1 className="text-6xl xl:text-7xl font-black text-foreground mb-8 leading-[1.05] tracking-tight">
                   Ready to <br />
@@ -71,7 +71,7 @@ export default function ContactPage() {
                     color: "text-emerald-400"
                   },
                 ].map((item, i) => (
-                  <m.a
+                  <motion.a
                     key={i}
                     href={item.href}
                     initial={{ opacity: 0, y: 15 }}
@@ -92,13 +92,13 @@ export default function ContactPage() {
                     <div className="absolute top-4 right-6 opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0 duration-300">
                       <ArrowRight size={14} className="text-accent" />
                     </div>
-                  </m.a>
+                  </motion.a>
                 ))}
               </div>
-            </m.div>
+            </motion.div>
 
             {/* Right Column: Wizard Container */}
-            <m.div 
+            <motion.div 
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
@@ -117,7 +117,7 @@ export default function ContactPage() {
                 </div>
 
                 {/* Performance Assurance */}
-                <m.div 
+                <motion.div 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 1.2 }}
@@ -131,9 +131,9 @@ export default function ContactPage() {
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                     Edge Delivery
                   </div>
-                </m.div>
+                </motion.div>
               </div>
-            </m.div>
+            </motion.div>
           </div>
         </div>
       </section>

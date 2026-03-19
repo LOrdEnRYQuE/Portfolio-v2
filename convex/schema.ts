@@ -151,4 +151,59 @@ export default defineSchema({
     inNavbar: v.boolean(),
     order: v.number(),
   }).index("by_slug", ["slug"]).index("by_published", ["published"]),
+
+  tickets: defineTable({
+    subject: v.string(),
+    message: v.string(),
+    status: v.string(),    // "OPEN" | "IN_PROGRESS" | "RESOLVED"
+    priority: v.string(),  // "LOW" | "MEDIUM" | "HIGH"
+    userId: v.id("users"),
+  }).index("by_user", ["userId"]).index("by_status", ["status"]),
+
+  ticketReplies: defineTable({
+    ticketId: v.id("tickets"),
+    content: v.string(),
+    role: v.string(), // "client" | "admin"
+  }).index("by_ticket", ["ticketId"]),
+
+  invoices: defineTable({
+    number: v.string(),
+    projectName: v.optional(v.string()),
+    amount: v.number(),
+    currency: v.string(),
+    status: v.string(),    // "DRAFT" | "SENT" | "PAID" | "OVERDUE"
+    dueDate: v.string(),
+    description: v.optional(v.string()),
+    details: v.optional(v.string()), // JSON string for wizard data
+    userId: v.id("users"),
+  }).index("by_user", ["userId"]).index("by_status", ["status"]),
+
+  contracts: defineTable({
+    title: v.string(),
+    language: v.string(),          // "EN" | "DE"
+    content: v.string(),           // Full contract body (markdown)
+    status: v.string(),            // "DRAFT" | "SENT" | "VIEWED" | "SIGNED"
+    clientId: v.optional(v.id("users")),
+    clientName: v.optional(v.string()),
+    clientEmail: v.optional(v.string()),
+    signatureData: v.optional(v.string()),  // Base64 PNG from canvas
+    signedAt: v.optional(v.string()),
+    sentAt: v.optional(v.string()),
+    accessToken: v.optional(v.string()),    // Unique token for public signing link
+  }).index("by_client", ["clientId"]).index("by_status", ["status"]).index("by_token", ["accessToken"]),
+
+  emails: defineTable({
+    from: v.string(),
+    to: v.string(),
+    subject: v.string(),
+    body: v.string(),
+    status: v.string(),    // "UNREAD" | "READ"
+    folder: v.string(),    // "INBOX" | "SENT" | "DRAFTS" | "SPAM" | "TRASH"
+    sentAt: v.string(),
+    userId: v.optional(v.id("users")),
+    threadId: v.optional(v.string()),
+    isStarred: v.optional(v.boolean()),
+    tags: v.optional(v.array(v.string())),
+    metadata: v.optional(v.string()), // JSON string for lead data or reply info
+  }).index("by_user", ["userId"]).index("by_folder", ["folder"]).index("by_status", ["status"]).index("by_thread", ["threadId"]),
 });
