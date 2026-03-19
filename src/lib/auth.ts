@@ -4,7 +4,9 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@convex/_generated/api";
 import bcrypt from "bcryptjs";
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+const convex = new ConvexHttpClient(
+  process.env.NEXT_PUBLIC_CONVEX_URL || "https://jovial-ibex-866.eu-west-1.convex.cloud"
+);
 
 interface CustomUser extends NextAuthUser {
   role: string;

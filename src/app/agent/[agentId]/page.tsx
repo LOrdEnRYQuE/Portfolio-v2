@@ -5,7 +5,11 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+const convex = new ConvexHttpClient(
+  process.env.NEXT_PUBLIC_CONVEX_URL || "https://jovial-ibex-866.eu-west-1.convex.cloud"
+);
+
+export const dynamic = "force-dynamic";
 
 export default async function StandaloneAgentPage({
   params,
