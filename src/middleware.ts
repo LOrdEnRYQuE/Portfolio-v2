@@ -9,3 +9,5 @@ export default withAuth({
 export const config = {
   matcher: ["/client/:path*"],
 };
+
+export const runtime = "edge";
