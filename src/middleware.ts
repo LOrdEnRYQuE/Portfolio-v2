@@ -34,11 +34,11 @@ export default async function middleware(req: NextRequest) {
     // Only check if it's a potential content page
     if (pathname !== "/" && !pathname.startsWith("/login")) {
       const redirects = await fetchQuery(api.redirects.listAll);
-      const match = redirects.find(r => r.fromPath === pathname || r.fromPath === pathname.replace(/\/$/, ""));
+      const match = redirects.find(r => r.source === pathname || r.source === pathname.replace(/\/$/, ""));
       
       if (match) {
-        return NextResponse.redirect(new URL(match.toPath, req.url), {
-          status: match.type === "301" ? 301 : 302,
+        return NextResponse.redirect(new URL(match.destination, req.url), {
+          status: match.permanent ? 301 : 302,
         });
       }
     }
@@ -55,5 +55,3 @@ export const config = {
   // but we'll exclude assets early in the logic.
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
-
-export const runtime = "nodejs"; // Convex Next.js fetch currently works better on Node runtime
