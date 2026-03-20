@@ -8,7 +8,8 @@ import { motion, AnimatePresence, LazyMotion, domAnimation } from "framer-motion
 import {
   LayoutDashboard, Users, MessageSquare, FileText, FolderKanban,
   Settings, LogOut, Menu, X, ChevronLeft, Ticket, Receipt,
-  User, Briefcase, Mail, type LucideIcon,
+  User, Briefcase, Mail, Laptop, Building2, ArrowRightLeft, type LucideIcon,
+  ImageIcon, LineChart
 } from "lucide-react";
 import type { Session } from "next-auth";
 
@@ -20,15 +21,21 @@ interface NavItem {
 
 const adminNav: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/analytics", label: "Analytics & GEO", icon: LineChart },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/leads", label: "Leads", icon: MessageSquare },
   { href: "/admin/emails", label: "Emails", icon: Mail },
-  { href: "/admin/blog", label: "Blog", icon: FileText },
+  { href: "/admin/services", label: "Services", icon: Laptop },
+  { href: "/admin/industries", label: "Industries", icon: Building2 },
   { href: "/admin/portfolio", label: "Portfolio", icon: FolderKanban },
   { href: "/admin/pages", label: "Pages", icon: FileText },
+  { href: "/admin/blog", label: "Blog", icon: FileText },
+  { href: "/admin/media", label: "Media Library", icon: ImageIcon },
+  { href: "/admin/redirects", label: "Redirects", icon: ArrowRightLeft },
   { href: "/admin/contracts", label: "Contracts", icon: FileText },
   { href: "/admin/invoices", label: "Invoices", icon: Receipt },
   { href: "/admin/settings", label: "Settings", icon: Settings },
+
 ];
 
 const clientNav: NavItem[] = [

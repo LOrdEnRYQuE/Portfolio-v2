@@ -1,6 +1,13 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
 export const listAll = query({
   args: {},
   handler: async (ctx) => {
@@ -15,12 +22,31 @@ export const create = mutation({
     ext: v.string(),
     size: v.string(),
     url: v.string(),
+    storageId: v.optional(v.string()),
+    altText: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const assetId = await ctx.db.insert("assets", {
-      ...args,
+      title: args.title,
+      type: args.type,
+      ext: args.ext,
+      size: args.size,
+      url: args.url,
+      altText: args.altText,
     });
     return await ctx.db.get(assetId);
+  },
+});
+
+export const update = mutation({
+  args: {
+    id: v.id("assets"),
+    title: v.optional(v.string()),
+    altText: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { id, ...rest } = args;
+    await ctx.db.patch(id, rest);
   },
 });
 

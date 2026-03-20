@@ -69,7 +69,7 @@ export default function DemosSection() {
                 {/* Status Badge */}
                 <div className="absolute top-4 right-4 z-10">
                   <Badge variant="accent" className="bg-background/80 backdrop-blur-md border-white/10 shadow-lg px-3 py-1">
-                    {demo.status === "Live Demo" ? "Live" : demo.status}
+                    {demo.status === "Live Demo" ? t("demos.status.live") : t("demos.status.prototype")}
                   </Badge>
                 </div>
 
@@ -89,7 +89,7 @@ export default function DemosSection() {
                      {demo.title.replace("LOrdEnRYQuE ", "")}
                    </h3>
                    <p className="text-text-secondary text-sm leading-relaxed mb-8 line-clamp-3">
-                     {demo.summary}
+                     {t(`demos.${demo.slug}.summary`)}
                    </p>
                 </div>
 
@@ -109,7 +109,7 @@ export default function DemosSection() {
                       className="grow group/btn rounded-xl py-6"
                     >
                       <span className="flex items-center justify-center gap-2">
-                        {demo.ctaLabel}
+                        {t(`demos.${demo.slug}.cta`)}
                         <ExternalLink size={14} className="group-hover/btn:translate-x-0.5 transition-transform" />
                       </span>
                     </Button>
@@ -141,15 +141,15 @@ export default function DemosSection() {
                 </div>
                 
                 <h3 className="text-2xl font-bold text-white mb-3 group-hover/forge:text-transparent group-hover/forge:bg-clip-text group-hover/forge:bg-linear-to-r group-hover/forge:from-accent-blue group-hover/forge:to-accent-purple transition-all duration-300">
-                  {t("demos.custom_title") || "Need a Custom MVP?"}
+                  {t("demos.custom_title")}
                 </h3>
                 
                 <p className="text-sm text-gray-400 mb-8 max-w-[240px] leading-relaxed">
-                  {t("demos.custom_desc") || "Define your vision in 2 minutes and get a full technical Blueprint + MVP strategy."}
+                  {t("demos.custom_desc")}
                 </p>
 
                 <div className="flex items-center gap-2 px-6 py-3 rounded-full bg-white/5 border border-white/10 text-white font-bold text-sm group-hover/forge:bg-accent-purple group-hover/forge:border-accent-purple group-hover/forge:text-white transition-all duration-300">
-                  <span>Open Forge</span>
+                  <span>{t("demos.custom_cta")}</span>
                   <ArrowRight size={16} className="group-hover/forge:translate-x-1 transition-transform" />
                 </div>
               </div>

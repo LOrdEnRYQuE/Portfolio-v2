@@ -40,6 +40,13 @@ export const create = mutation({
     published: v.boolean(),
     inNavbar: v.boolean(),
     order: v.number(),
+    seoTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    canonicalUrl: v.optional(v.string()),
+    ogImage: v.optional(v.string()),
+    isIndexed: v.optional(v.boolean()),
+    schemaType: v.optional(v.string()),
+    faqItems: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("pages", args);
@@ -56,6 +63,13 @@ export const update = mutation({
     published: v.optional(v.boolean()),
     inNavbar: v.optional(v.boolean()),
     order: v.optional(v.number()),
+    seoTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    canonicalUrl: v.optional(v.string()),
+    ogImage: v.optional(v.string()),
+    isIndexed: v.optional(v.boolean()),
+    schemaType: v.optional(v.string()),
+    faqItems: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...rest } = args;
@@ -79,6 +93,13 @@ export const upsertBySlug = mutation({
     published: v.boolean(),
     inNavbar: v.boolean(),
     order: v.number(),
+    seoTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    canonicalUrl: v.optional(v.string()),
+    ogImage: v.optional(v.string()),
+    isIndexed: v.optional(v.boolean()),
+    schemaType: v.optional(v.string()),
+    faqItems: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -87,11 +108,7 @@ export const upsertBySlug = mutation({
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, {
-        content: args.content,
-        ...(args.title ? { title: args.title } : {}),
-        ...(args.description ? { description: args.description } : {}),
-      });
+      await ctx.db.patch(existing._id, args);
       return existing._id;
     }
 

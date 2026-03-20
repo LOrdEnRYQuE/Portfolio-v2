@@ -2,11 +2,10 @@ import { google } from "@ai-sdk/google";
 import { streamText, convertToModelMessages } from "ai";
 import { NextResponse } from "next/server";
 import { AgentConfig } from "@/components/ui/AIConcierge";
-import { ConvexHttpClient } from "convex/browser";
+import { convex } from "@/lib/convex";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL || process.env.CONVEX_URL || "https://jovial-ibex-866.eu-west-1.convex.cloud");
 
 export async function POST(
   req: Request,

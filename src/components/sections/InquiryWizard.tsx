@@ -59,8 +59,8 @@ interface WizardData {
   objective: string;
   audience: string;
   infrastructure: string;
-  timeline: string;
-  budget: string;
+  timeline: "fast" | "standard" | "slow" | "tbd";
+  budget: "low" | "medium" | "high" | "custom";
   phone: string;
   preferredMethod: "email" | "whatsapp" | "phone";
   agreedToTerms: boolean;
@@ -79,8 +79,8 @@ const INITIAL_DATA: WizardData = {
   objective: "validate",
   audience: "b2c",
   infrastructure: "serverless",
-  timeline: "Standard (1-3 months)",
-  budget: "€5k - €15k",
+  timeline: "standard",
+  budget: "low",
   phone: "",
   preferredMethod: "email",
   agreedToTerms: false,
@@ -89,16 +89,16 @@ const INITIAL_DATA: WizardData = {
 };
 
 const FEATURE_OPTIONS = [
-  { id: "ai", label: "AI Integration", icon: <Cpu size={16} />, desc: "LLMs, Agents, RAG" },
-  { id: "mobile", label: "Mobile App", icon: <Zap size={16} />, desc: "iOS & Android" },
-  { id: "saas", label: "SaaS Platform", icon: <Layers size={16} />, desc: "Dashboards, Auth" },
-  { id: "web", label: "High-End Web", icon: <Globe size={16} />, desc: "Performance, SEO" },
-  { id: "infra", label: "Cloud Infra", icon: <Database size={16} />, desc: "AWS, Vercel, Ops" },
-  { id: "analytics", idKey: "analytics", icon: <BarChart3 size={16} /> },
-  { id: "crm", idKey: "crm", icon: <Users2 size={16} /> },
-  { id: "security", idKey: "security", icon: <Lock size={16} /> },
-  { id: "realtime", idKey: "realtime", icon: <RefreshCw size={16} /> },
-  { id: "automation", label: "Workflows", icon: <Sparkles size={16} />, desc: "Efficiency, Logic" },
+  { id: "ai", icon: <Cpu size={16} /> },
+  { id: "mobile", icon: <Zap size={16} /> },
+  { id: "saas", icon: <Layers size={16} /> },
+  { id: "web", icon: <Globe size={16} /> },
+  { id: "infra", icon: <Database size={16} /> },
+  { id: "analytics", icon: <BarChart3 size={16} /> },
+  { id: "crm", icon: <Users2 size={16} /> },
+  { id: "security", icon: <Lock size={16} /> },
+  { id: "realtime", icon: <RefreshCw size={16} /> },
+  { id: "automation", icon: <Sparkles size={16} /> },
 ];
 
 const OBJECTIVE_OPTIONS = [
@@ -129,12 +129,12 @@ const INDUSTRY_OPTIONS = [
 ];
 
 const TIMELINE_OPTIONS = [
-  "Rushed (< 1 month)", "Standard (1-3 months)", "Strategic (3-6 months)", "TBD"
-];
+  { id: "fast" }, { id: "standard" }, { id: "slow" }, { id: "tbd" }
+] as const;
 
 const BUDGET_OPTIONS = [
-  "< €5k", "€5k - €15k", "€15k - €30k", "€30k - €75k", "€75k - €150k", "Enterprise (€250k+)", "Custom"
-];
+  { id: "low" }, { id: "medium" }, { id: "high" }, { id: "custom" }
+] as const;
 
 const CONTACT_METHODS = [
   { id: "email", icon: <Mail size={18} /> },
@@ -144,145 +144,7 @@ const CONTACT_METHODS = [
 
 const STEPS = ["basics", "goals", "specs", "launch"];
 
-const LEGAL_TERMS = {
-  en: {
-    title: "Client Duties & Financial Obligations",
-    sections: [
-      {
-        title: "1. Payment Terms & Hosting Fees",
-        items: [
-          "Service Fees: The Client agrees to pay all fees for services rendered by Contact Page Wizards as outlined in the signed Proposal or Invoice.",
-          "Recurring Hosting: If hosting services are provided, payments are due on a Monthly/Annual basis. The Client acknowledges that hosting is a third-party cost managed by the Wizards; failure to remit payment by the due date will result in automatic site suspension within 7 days of the missed deadline.",
-          "Late Fees: Invoices unpaid after 15 days will incur a late fee of 5% or the maximum rate permitted by law."
-        ]
-      },
-      {
-        title: "2. Client Cooperation & Data Provision",
-        items: [
-          "Providing all necessary branding assets (logos, images, copy) within 7 business days of a request.",
-          "Granting administrative access to necessary third-party platforms required for site deployment.",
-          "Reviewing and approving 'Milestone' deliverables within 3 business days. Delays in feedback will result in an equivalent delay in the final launch date."
-        ]
-      },
-      {
-        title: "3. Third-Party Licenses",
-        items: [
-          "The Client is responsible for the cost and maintenance of any third-party software, plugins, or stock imagery licenses specifically requested for their project, unless otherwise stated in writing."
-        ]
-      },
-      {
-        title: "4. Consequences of Non-Performance",
-        items: [
-          "Contact Page Wizards reserves the right to pause all work if the Client fails to meet the duties outlined above. We are not liable for any loss of revenue, SEO ranking, or data caused by site suspension due to the Client's failure to pay hosting or renewal fees."
-        ]
-      }
-    ]
-  },
-  de: {
-    title: "Pflichten des Kunden & Finanzielle Verpflichtungen",
-    sections: [
-      {
-        title: "1. Zahlungsbedingungen & Hosting-Gebühren",
-        items: [
-          "Servicegebühren: Der Kunde erklärt sich bereit, alle Gebühren für Dienstleistungen von Contact Page Wizards zu zahlen, wie im unterzeichneten Angebot oder der Rechnung aufgeführt.",
-          "Wiederkehrendes Hosting: Wenn Hosting-Dienste bereitgestellt werden, sind Zahlungen monatlich/jährlich fällig. Die Nichtzahlung bis zum Fälligkeitsdatum führt innerhalb von 7 Tagen zur automatischen Aussetzung der Website.",
-          "Verspätungsgebühren: Unbezahlte Rechnungen nach 15 Tagen ziehen eine Verspätungsgebühr von 5% nach sich."
-        ]
-      },
-      {
-        title: "2. Mitwirkung des Kunden & Datenbereitstellung",
-        items: [
-          "Bereitstellung aller erforderlichen Markenwerte (Logos, Bilder, Texte) innerhalb von 7 Werktagen.",
-          "Gewährung des administrativen Zugriffs auf erforderliche Plattformen von Drittanbietern.",
-          "Überprüfung und Genehmigung von Meilensteinen innerhalb von 3 Werktagen. Verzögerungen beim Feedback verschieben den finalen Starttermin."
-        ]
-      },
-      {
-        title: "3. Lizenzen von Drittanbietern",
-        items: [
-          "Der Kunde ist verantwortlich für die Kosten und Wartung von Drittanbieter-Software, Plugins oder Bildlizenzen, es sei denn, es ist schriftlich anders vereinbart."
-        ]
-      },
-      {
-        title: "4. Folgen der Nichterfüllung",
-        items: [
-          "Contact Page Wizards behält sich das Recht vor, alle Arbeiten zu pausieren, wenn der Kunde die oben genannten Pflichten nicht erfüllt."
-        ]
-      }
-    ]
-  }
-};
-
-const QUICK_START = {
-  en: {
-    title: "🧙‍♂️ Welcome to the Magic: Your Project Quick-Start",
-    desc: "We're excited to build something great together! To keep the magic moving and ensure your site launches on time, here is a quick checklist of your 'Wizard Duties':",
-    sections: [
-      {
-        title: "1. The 'Ingredients' (Assets & Copy)",
-        items: [
-          "Logo & Branding: High-resolution files (PNG, SVG, or AI).",
-          "The Story: Your 'About Us' text and service descriptions.",
-          "Imagery: Photos of your team, products, or workspace.",
-          "Access: Login details for your domain registrar."
-        ]
-      },
-      {
-        title: "2. The 'Timeline' (Feedback)",
-        items: [
-          "Review Cycles: When we send a draft, try to give us the 'thumbs up' or requested changes within 3 business days."
-        ]
-      },
-      {
-        title: "3. The 'Fuel' (Payments & Hosting)",
-        items: [
-          "Milestones: Keep an eye out for project invoices to avoid any 'work pauses.'",
-          "Hosting: Your site's 'home' on the internet requires a recurring payment. We'll set this up to be automatic!"
-        ]
-      },
-      {
-        title: "4. Communication",
-        items: [
-          "Stay in Touch: We'll reach out via your preferred method. If your contact info changes, just let us know!"
-        ]
-      }
-    ]
-  },
-  de: {
-    title: "🧙‍♂️ Willkommen in der Magie: Ihr Projekt-Schnellstart",
-    desc: "Wir freuen uns darauf, gemeinsam Großartiges zu erschaffen! Um die Magie am Laufen zu halten, hier eine kurze Checkliste Ihrer Pflichten:",
-    sections: [
-      {
-        title: "1. Die 'Zutaten' (Assets & Texte)",
-        items: [
-          "Logo & Branding: Hochauflösende Dateien (PNG, SVG oder AI).",
-          "Die Geschichte: Ihr 'Über uns'-Text und Leistungsbeschreibungen.",
-          "Bildmaterial: Fotos Ihres Teams, Ihrer Produkte oder Räumlichkeiten.",
-          "Zugang: Login-Daten für Ihren Domain-Registrar."
-        ]
-      },
-      {
-        title: "2. Die 'Zeitachse' (Feedback)",
-        items: [
-          "Überprüfungszyklen: Versuchen Sie uns innerhalb von 3 Werktagen Feedback zu Entwürfen zu geben."
-        ]
-      },
-      {
-        title: "3. Der 'Treibstoff' (Zahlungen & Hosting)",
-        items: [
-          "Meilensteine: Achten Sie auf Projekt-Rechnungen, um Arbeitsunterbrechungen zu vermeiden.",
-          "Hosting: Das 'Zuhause' Ihrer Website im Internet erfordert eine wiederkehrende Zahlung. Wir richten dies automatisch ein!"
-        ]
-      },
-      {
-        title: "4. Kommunikation",
-        items: [
-          "Bleiben Sie in Kontakt: Wir melden uns über Ihre bevorzugte Methode. Wenn sich Ihre Kontaktdaten ändern, lassen Sie es uns einfach wissen!"
-        ]
-      }
-    ]
-  }
-};
+// Moved to i18n
 
 export default function InquiryWizard() {
   const { t, locale } = useI18n();
@@ -347,25 +209,40 @@ Concept: ${data.concept}
 Industry: ${t(`contact.wizard.industry.${data.industry}.label`)}
 Objective: ${t(`contact.wizard.objective.${data.objective}.label`)}
 Description: ${data.description}
-Technical Stack: ${data.features.map(f => {
-  const opt = FEATURE_OPTIONS.find(o => o.id === f);
-  return opt?.idKey ? t(`contact.wizard.feature.${opt.idKey}.label`) : opt?.label;
-}).join(", ") || "Standard Framework"}
-Timeline: ${data.timeline}
-Budget: ${data.budget === "Custom" && data.customBudget ? data.customBudget : data.budget}
+Technical Stack: ${data.features.map(f => t(`contact.wizard.feature.${f}.label`)).join(", ") || "Standard Framework"}
+Timeline: ${t(`contact.wizard.timeline.${data.timeline}`)}
+Budget: ${data.budget === "custom" && data.customBudget ? data.customBudget : t(`contact.wizard.budget.${data.budget}`)}
 Agreed to Terms: Yes
     `.trim();
 
-    const quickStartObj = QUICK_START[locale as 'en' | 'de'] || QUICK_START.en;
+    // Build quick start and project brief using translations
+    const quickStartTitle = t("contact.wizard.quickstart.title");
+    const quickStartDesc = t("contact.wizard.quickstart.desc");
+    
+    let quickStartDetails = "";
+    [1, 2, 3, 4].forEach(num => {
+      quickStartDetails += `\n${t(`contact.wizard.quickstart.s${num}.title`)}\n`;
+      [1, 2, 3, 4].forEach(itemNum => {
+        const key = `contact.wizard.quickstart.s${num}.item${itemNum}`;
+        const content = t(key);
+        if (content !== key) {
+          quickStartDetails += `- ${content}\n`;
+        }
+      });
+    });
+
     const qsString = `
-PROJECT PLAN & QUICK START: ${data.name}
+PROJECT BRIEF: ${data.name}
+Generated on: ${new Date().toLocaleDateString(locale)}
 
---- Client Duties & Quick Start ---
-${quickStartObj.sections.map(s => s.title + '\n' + s.items.map(i => '- ' + i).join('\n')).join('\n\n')}
+--- ${quickStartTitle} ---
+${quickStartDesc}
+${quickStartDetails}
 
-Communication Preference: ${data.preferredMethod.toUpperCase()}
+--- Communication Preference ---
+${data.preferredMethod.toUpperCase()}
 
---- Technical & Strategic Proposal ---
+--- Project Details ---
 ${formattedPlan}
     `.trim();
 
@@ -410,7 +287,6 @@ ${formattedPlan}
   };
 
   if (isSuccess) {
-    const quickStart = QUICK_START[locale as 'en' | 'de'] || QUICK_START.en;
     return (
       <m.div 
         initial={{ opacity: 0, scale: 0.95 }}
@@ -420,23 +296,28 @@ ${formattedPlan}
         <div className="w-20 h-20 bg-accent/20 rounded-full flex items-center justify-center mb-4 mx-auto shadow-accent-glow animate-pulse">
           <CheckCircle2 className="text-accent" size={40} />
         </div>
-        <h3 className="text-3xl font-black text-foreground text-center">{quickStart.title}</h3>
-        <p className="text-text-secondary w-full text-center text-lg max-w-2xl mx-auto mb-6">{quickStart.desc}</p>
+        <h3 className="text-3xl font-black text-foreground text-center">{t("contact.wizard.quickstart.title")}</h3>
+        <p className="text-text-secondary w-full text-center text-lg max-w-2xl mx-auto mb-6">{t("contact.wizard.quickstart.desc")}</p>
         <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 w-full space-y-8">
-          {quickStart.sections.map((sec, idx) => (
-            <div key={idx} className="space-y-4">
-              <h4 className="text-accent font-black text-sm tracking-widest uppercase">{sec.title}</h4>
+          {[1, 2, 3, 4].map((num) => (
+            <div key={num} className="space-y-4">
+              <h4 className="text-accent font-black text-sm tracking-widest uppercase">{t(`contact.wizard.quickstart.s${num}.title`)}</h4>
               <ul className="space-y-3">
-                {sec.items.map((item, idxi) => (
-                  <li key={idxi} className="flex items-start gap-4 text-sm text-text-secondary">
-                    <div className="mt-0.5 shrink-0">
-                      <div className="w-5 h-5 rounded border border-accent/30 bg-accent/5 flex items-center justify-center">
-                        <CheckCircle2 size={12} className="text-accent" />
+                {[1, 2, 3, 4].map((itemNum) => {
+                  const key = `contact.wizard.quickstart.s${num}.item${itemNum}`;
+                  const content = t(key);
+                  if (content === key) return null; // Simple way to skip non-existent items
+                  return (
+                    <li key={itemNum} className="flex items-start gap-4 text-sm text-text-secondary">
+                      <div className="mt-0.5 shrink-0">
+                        <div className="w-5 h-5 rounded border border-accent/30 bg-accent/5 flex items-center justify-center">
+                          <CheckCircle2 size={12} className="text-accent" />
+                        </div>
                       </div>
-                    </div>
-                    <span className="leading-relaxed">{item}</span>
-                  </li>
-                ))}
+                      <span className="leading-relaxed">{content}</span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}
@@ -507,16 +388,16 @@ ${formattedPlan}
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-text-muted">{t("contact.wizard.form.name")}</label>
-                    <input type="text" value={data.name} onChange={(e) => updateData({ name: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-foreground focus:outline-none focus:border-accent transition-all" placeholder="Your Name" />
+                    <input type="text" value={data.name} onChange={(e) => updateData({ name: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-foreground focus:outline-none focus:border-accent transition-all" placeholder={t("contact.wizard.form.name.placeholder")} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-text-muted">{t("contact.wizard.form.email")}</label>
-                    <input type="email" value={data.email} onChange={(e) => updateData({ email: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-foreground focus:outline-none focus:border-accent transition-all" placeholder="Your Email" />
+                    <input type="email" value={data.email} onChange={(e) => updateData({ email: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-foreground focus:outline-none focus:border-accent transition-all" placeholder={t("contact.wizard.form.email.placeholder")} />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-text-muted">{t("contact.wizard.form.concept")}</label>
-                  <input type="text" value={data.concept} onChange={(e) => updateData({ concept: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-foreground focus:outline-none focus:border-accent transition-all" placeholder="Project Name" />
+                  <input type="text" value={data.concept} onChange={(e) => updateData({ concept: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-foreground focus:outline-none focus:border-accent transition-all" placeholder={t("contact.wizard.form.concept.placeholder")} />
                 </div>
               </div>
             )}
@@ -575,7 +456,10 @@ ${formattedPlan}
                       return (
                         <button key={opt.id} onClick={() => updateData({ features: active ? data.features.filter(f => f !== opt.id) : [...data.features, opt.id] })} className={cn("flex items-center gap-3 p-4 rounded-xl border text-left transition-all", active ? "border-accent bg-accent text-background" : "border-white/10 bg-white/5 text-foreground hover:border-white/30")}>
                           <div className={cn("p-1.5 rounded-lg", active ? "bg-background/20 text-background" : "bg-white/5 text-accent")}>{opt.icon}</div>
-                          <span className="font-bold text-[10px] uppercase tracking-tight">{opt.idKey ? t(`contact.wizard.feature.${opt.idKey}.label`) : opt.label}</span>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-[10px] uppercase tracking-tight line-clamp-1">{t(`contact.wizard.feature.${opt.id}.label`)}</span>
+                            <span className={cn("text-[8px] line-clamp-1", active ? "text-background/70" : "text-text-muted")}>{t(`contact.wizard.feature.${opt.id}.desc`)}</span>
+                          </div>
                         </button>
                       );
                     })}
@@ -586,7 +470,9 @@ ${formattedPlan}
                     <label className="text-xs font-bold uppercase tracking-wider text-text-muted">{t("contact.wizard.form.timeline")}</label>
                     <div className="grid grid-cols-1 gap-2">
                       {TIMELINE_OPTIONS.map(opt => (
-                        <button key={opt} onClick={() => updateData({ timeline: opt })} className={cn("p-3 rounded-xl border text-xs font-bold transition-all", data.timeline === opt ? "border-accent bg-accent text-background" : "border-white/10 bg-white/5 hover:border-white/30")}>{opt}</button>
+                        <button key={opt.id} onClick={() => updateData({ timeline: opt.id })} className={cn("p-3 rounded-xl border text-xs font-bold transition-all", data.timeline === opt.id ? "border-accent bg-accent text-background" : "border-white/10 bg-white/5 hover:border-white/30")}>
+                          {t(`contact.wizard.timeline.${opt.id}`)}
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -594,7 +480,9 @@ ${formattedPlan}
                     <label className="text-xs font-bold uppercase tracking-wider text-text-muted">{t("contact.wizard.form.budget")}</label>
                     <div className="grid grid-cols-1 gap-2">
                     {BUDGET_OPTIONS.map(opt => (
-                        <button key={opt} onClick={() => updateData({ budget: opt })} className={cn("p-3 rounded-xl border text-xs font-bold transition-all", data.budget === opt ? "border-accent bg-accent text-background" : "border-white/10 bg-white/5 hover:border-white/30")}>{opt}</button>
+                        <button key={opt.id} onClick={() => updateData({ budget: opt.id })} className={cn("p-3 rounded-xl border text-xs font-bold transition-all", data.budget === opt.id ? "border-accent bg-accent text-background" : "border-white/10 bg-white/5 hover:border-white/30")}>
+                          {t(`contact.wizard.budget.${opt.id}`)}
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -629,22 +517,21 @@ ${formattedPlan}
                       <div>
                         <span className="text-[10px] text-text-muted uppercase font-bold tracking-widest">{t("contact.wizard.review.features")}</span>
                         <div className="flex flex-wrap gap-1.5 mt-1">
-                          {data.features.map(f => {
-                            const opt = FEATURE_OPTIONS.find(o => o.id === f);
-                            return <span key={f} className="text-[9px] px-2 py-0.5 bg-accent/10 border border-accent/20 text-accent rounded-full font-bold">
-                              {opt?.idKey ? t(`contact.wizard.feature.${opt.idKey}.label`) : opt?.label}
+                          {data.features.map(f => (
+                            <span key={f} className="text-[9px] px-2 py-0.5 bg-accent/10 border border-accent/20 text-accent rounded-full font-bold">
+                              {t(`contact.wizard.feature.${f}.label`)}
                             </span>
-                          })}
+                          ))}
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <span className="text-[10px] text-text-muted uppercase font-bold tracking-widest">{t("contact.wizard.form.timeline")}</span>
-                          <p className="text-foreground text-xs font-bold">{data.timeline}</p>
+                          <p className="text-foreground text-xs font-bold">{t(`contact.wizard.timeline.${data.timeline}`)}</p>
                         </div>
                         <div>
                           <span className="text-[10px] text-text-muted uppercase font-bold tracking-widest">{t("contact.wizard.form.budget")}</span>
-                          <p className="text-foreground text-xs font-bold">{data.budget}</p>
+                          <p className="text-foreground text-xs font-bold">{t(`contact.wizard.budget.${data.budget}`)}</p>
                         </div>
                       </div>
                     </div>
@@ -656,14 +543,14 @@ ${formattedPlan}
                     <div className="w-6 h-6 border-2 border-white/20 rounded bg-white/5 peer-checked:bg-accent peer-checked:border-accent transition-all flex items-center justify-center shrink-0">
                       <CheckCircle2 size={16} className="text-background opacity-0 peer-checked:opacity-100 transition-opacity" />
                     </div>
-                    <span className="text-sm text-text-secondary group-hover:text-foreground transition-colors">I agree to the <a href="/terms" className="text-accent underline">Terms of Service</a> and project conditions.</span>
+                    <span className="text-sm text-text-secondary group-hover:text-foreground transition-colors">{t("contact.wizard.form.agree_terms")}</span>
                   </label>
                   <label className="flex items-start gap-4 cursor-pointer group">
                     <input type="checkbox" checked={data.agreedToCommunication} onChange={(e) => updateData({ agreedToCommunication: e.target.checked })} className="sr-only peer" />
                     <div className="w-6 h-6 border-2 border-white/20 rounded bg-white/5 peer-checked:bg-accent peer-checked:border-accent transition-all flex items-center justify-center shrink-0">
                       <CheckCircle2 size={16} className="text-background opacity-0 peer-checked:opacity-100 transition-opacity" />
                     </div>
-                    <span className="text-sm text-text-secondary group-hover:text-foreground transition-colors">I agree to be contacted for project updates.</span>
+                    <span className="text-sm text-text-secondary group-hover:text-foreground transition-colors">{t("contact.wizard.form.agree_comm")}</span>
                   </label>
                 </div>
               </div>
@@ -674,7 +561,7 @@ ${formattedPlan}
 
       <div className="flex items-center justify-between mt-12 pt-8 border-t border-white/5">
         <Button variant="ghost" onClick={prevStep} disabled={step === 1 || isSubmitting} className={cn("rounded-xl px-4 py-2 font-bold", step === 1 && "opacity-0 invisible")}>
-          <ArrowLeft size={16} className="mr-2" /> Back
+          <ArrowLeft size={16} className="mr-2" /> {t("contact.wizard.nav.back")}
         </Button>
         {step < STEPS.length ? (
           <Button onClick={nextStep} disabled={!calculateCanGoNext()} className="rounded-xl px-8 py-2 font-bold shadow-blue-glow">

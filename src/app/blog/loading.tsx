@@ -1,34 +1,30 @@
-export default function BlogLoading() {
+import React from "react";
+
+export default function Loading() {
   return (
-    <div className="relative min-h-screen">
-      {/* Background Elements */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[20%] left-[10%] w-[40%] h-[40%] bg-accent-blue/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[30%] right-[5%] w-[30%] h-[30%] bg-accent-purple/5 rounded-full blur-[100px]" />
+    <div className="py-24 px-6 md:px-10 max-w-7xl mx-auto min-h-screen">
+       <div className="space-y-4 mb-20 text-center">
+        <div className="h-4 w-24 bg-white/5 animate-pulse rounded-full mx-auto" />
+        <div className="h-12 w-80 bg-white/10 animate-pulse rounded-2xl mx-auto" />
       </div>
 
-      {/* Header Skeleton */}
-      <header className="relative z-10 pt-20 pb-12 px-6 text-center">
-        <div className="max-w-4xl mx-auto space-y-4 animate-pulse">
-          <div className="mx-auto w-40 h-6 rounded-full bg-white/5 border border-white/10" />
-          <div className="mx-auto w-[80%] h-16 md:h-20 rounded-2xl bg-white/5" />
-          <div className="mx-auto w-[60%] h-6 rounded-lg bg-white/5" />
-        </div>
-      </header>
-
-      {/* Posts Section Skeleton */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="rounded-3xl border border-white/5 bg-surface/50 p-6 space-y-4 animate-pulse">
-              <div className="w-full aspect-video rounded-2xl bg-white/5" />
-              <div className="w-[40%] h-4 rounded-full bg-white/5" />
-              <div className="w-full h-8 rounded-lg bg-white/5" />
-              <div className="w-full h-20 rounded-lg bg-white/5" />
+      <div className="space-y-8">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="group p-8 md:p-12 rounded-[2.5rem] border border-white/10 bg-white/5 animate-pulse flex flex-col md:flex-row gap-12 items-center">
+            <div className="w-full md:w-1/3 aspect-[1.3/1] bg-white/10 rounded-3xl" />
+            <div className="flex-1 space-y-6">
+              <div className="flex gap-4">
+                 <div className="h-4 w-24 bg-white/5 rounded-md" />
+                 <div className="h-4 w-24 bg-white/5 rounded-md" />
+              </div>
+              <div className="h-8 w-3/4 bg-white/10 rounded-xl" />
+              <div className="h-4 w-full bg-white/5 rounded-lg" />
+              <div className="h-4 w-5/6 bg-white/5 rounded-lg" />
+              <div className="h-10 w-40 bg-white/10 rounded-xl mt-6" />
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

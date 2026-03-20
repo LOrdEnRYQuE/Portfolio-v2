@@ -4,10 +4,22 @@ import type { Metadata } from "next";
 export function constructMetadata({
   title,
   description,
-  image = "/images/og/default.png",
+  image = "/og-image.png",
   icons = "/favicon.ico",
   noIndex = false,
-  keywords = [],
+  keywords = [
+    "Web Developer",
+    "AI Developer",
+    "Graphic Designer",
+    "Branding",
+    "Portfolio Designer",
+    "Website Developer for Restaurants",
+    "Salon Website Designer",
+    "Custom Software Developer",
+    "SaaS Builder",
+    "LOrdEnRYQuE"
+  ],
+  canonical,
 }: {
   title?: string;
   description?: string;
@@ -15,6 +27,7 @@ export function constructMetadata({
   icons?: string;
   noIndex?: boolean;
   keywords?: string[];
+  canonical?: string;
 } = {}): Metadata {
   const pageTitle = title ? `${title} | ${siteConfig.brand}` : `${siteConfig.brand} — ${siteConfig.role}`;
   const pageDescription = description || siteConfig.bio;
@@ -23,6 +36,9 @@ export function constructMetadata({
     title: pageTitle,
     description: pageDescription,
     keywords: keywords.length > 0 ? keywords : undefined,
+    alternates: {
+      canonical: canonical || siteConfig.domain,
+    },
     openGraph: {
       type: "website",
       locale: "en_US",

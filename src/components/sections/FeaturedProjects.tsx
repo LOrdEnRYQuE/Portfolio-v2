@@ -10,15 +10,32 @@ import { useI18n } from "@/lib/i18n";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 
+import Image from "next/image";
+
+interface PortfolioProject {
+  _id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  status: string;
+  stack: string[] | string;
+  cover: string;
+  featured: boolean;
+  _creationTime: number;
+  liveUrl?: string;
+  githubUrl?: string;
+}
+
 interface FeaturedProjectsProps {
   title?: string;
   subtitle?: string;
+  initialData?: PortfolioProject[];
 }
 
-export default function FeaturedProjects({ title, subtitle }: FeaturedProjectsProps) {
+export default function FeaturedProjects({ title, subtitle, initialData }: FeaturedProjectsProps) {
   const { t } = useI18n();
   const convexProjects = useQuery(api.portfolio.getFeatured);
-  const featured = convexProjects?.slice(0, 3) || [];
+  const featured = (convexProjects || initialData || []).slice(0, 3);
 
   return (
     <section id="projects" className="py-24 px-6 md:px-10 max-w-7xl mx-auto border-t border-border">
@@ -53,16 +70,28 @@ export default function FeaturedProjects({ title, subtitle }: FeaturedProjectsPr
             >
               <Card className="flex flex-col h-full grow overflow-hidden group">
                 <div className="relative h-48 md:h-60 overflow-hidden bg-surface-hover/30 group/img">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--accent-muted),transparent_70%)] opacity-20 group-hover/img:opacity-40 transition-opacity duration-1000" />
-                  <div className="absolute inset-0 bg-linear-to-br from-background via-accent/5 to-accent/10 flex items-center justify-center p-8">
-                    <div className="w-full h-full border border-white/10 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden backdrop-blur-sm bg-white/2 group-hover:border-accent/30 transition-colors duration-500">
-                      <div className="absolute inset-0 bg-accent-radial opacity-30 group-hover:opacity-50 transition-opacity duration-500" />
-                      <span className="text-accent/40 text-[10px] tracking-[0.4em] uppercase font-black text-center group-hover:text-accent group-hover:scale-110 transition-all duration-700 font-mono">
-                        {project.title.split(' ').map(word => word[0]).join('')} • {project.slug.toUpperCase()}
-                      </span>
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-8 h-px bg-accent/20 group-hover:w-16 transition-all duration-700" />
-                    </div>
-                  </div>
+                  {project.cover ? (
+                    <Image 
+                      src={project.cover}
+                      alt={project.title}
+                      fill
+                      className="object-cover group-hover/img:scale-105 transition-transform duration-700"
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                    />
+                  ) : (
+                    <>
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--accent-muted),transparent_70%)] opacity-20 group-hover/img:opacity-40 transition-opacity duration-1000" />
+                      <div className="absolute inset-0 bg-linear-to-br from-background via-accent/5 to-accent/10 flex items-center justify-center p-8">
+                        <div className="w-full h-full border border-white/10 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden backdrop-blur-sm bg-white/2 group-hover:border-accent/30 transition-colors duration-500">
+                          <div className="absolute inset-0 bg-accent-radial opacity-30 group-hover:opacity-50 transition-opacity duration-500" />
+                          <span className="text-accent/40 text-[10px] tracking-[0.4em] uppercase font-black text-center group-hover:text-accent group-hover:scale-110 transition-all duration-700 font-mono">
+                            {project.title.split(' ').map(word => word[0]).join('')} • {project.slug.toUpperCase()}
+                          </span>
+                          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-8 h-px bg-accent/20 group-hover:w-16 transition-all duration-700" />
+                        </div>
+                      </div>
+                    </>
+                  )}
                   <div className="absolute inset-0 bg-background/20 group-hover:bg-transparent transition-colors duration-500" />
                 </div>
 

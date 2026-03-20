@@ -177,7 +177,7 @@ export default function Navbar() {
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
                   className="p-2 text-text-secondary hover:text-white transition-colors duration-200 ml-2"
-                  title="Logout"
+                  title={t("nav.logout")}
                 >
                   <LogOut size={20} />
                 </button>
@@ -209,7 +209,7 @@ export default function Navbar() {
               <div className="relative z-10">
                 <div className="flex items-center justify-between py-2 border-b border-white/5 mb-2">
                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                    <Globe size={12} aria-hidden="true" /> Language
+                    <Globe size={12} aria-hidden="true" /> {t("nav.language")}
                   </span>
                   <div className="flex gap-4">
                     <button 
@@ -247,7 +247,7 @@ export default function Navbar() {
                   <Link
                     href="/contact"
                     onClick={() => setMobileOpen(false)}
-                    className="rounded-full bg-slate-400 px-5 py-2.5 text-sm font-medium text-background text-center hover:bg-slate-500 transition-colors"
+                    className="rounded-full bg-accent-blue px-5 py-2.5 text-sm font-medium text-white text-center hover:bg-accent-purple transition-colors"
                   >
                     {t("nav.start_project")}
                   </Link>
@@ -259,7 +259,7 @@ export default function Navbar() {
                       }}
                       className="rounded-full border border-white/10 px-5 py-2.5 text-sm font-medium text-text-secondary text-center hover:bg-white/5 transition-colors flex justify-center items-center gap-2"
                     >
-                      <LogOut size={16} /> Logout
+                      <LogOut size={16} /> {t("nav.logout")}
                     </button>
                   )}
                 </div>

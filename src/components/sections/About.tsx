@@ -23,7 +23,7 @@ export default function About() {
           <div className="space-y-4">
             <p className="text-accent-blue text-xs font-black tracking-[0.3em] uppercase">{t("about.title")}</p>
             <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground leading-[1.05]">
-              Meet{" "}
+              {t("about.meet")}{" "}
               <span className="text-accent-blue">{siteConfig.name.split(" ")[0]}</span>
             </h2>
           </div>
@@ -32,7 +32,7 @@ export default function About() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-2">
               <p className="text-sm font-medium text-accent-blue/60 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent-blue animate-pulse" />
-                {t("about.based_in")} {siteConfig.location}
+                {t("about.based_in")} {t("common.location")}
               </p>
               
               <a 
@@ -41,7 +41,7 @@ export default function About() {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-blue/10 border border-accent-blue/20 text-accent-blue text-sm font-bold hover:bg-accent-blue/20 transition-colors w-fit shadow-md"
               >
                 <Download size={16} />
-                Download Resume
+                {t("hero.cta.resume")}
               </a>
             </div>
           </div>

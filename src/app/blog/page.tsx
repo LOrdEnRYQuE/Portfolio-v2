@@ -27,7 +27,7 @@ export default async function BlogPage() {
             LOrdEnRYQuE Insights
           </h1>
           <p className="text-lg md:text-xl text-foreground/60 max-w-2xl mx-auto font-light">
-            Engineering, AI, and the mechanics of high-impact product execution.
+            Engineering, AI, and the mechanics of building successful products.
           </p>
         </div>
       </header>

@@ -8,6 +8,34 @@ import { Calendar, Tag, ArrowLeft, Share2 } from "lucide-react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 
+import { constructMetadata } from "@/lib/seo";
+import { Metadata } from "next";
+
+export async function generateStaticParams() {
+  const posts = await fetchQuery(api.posts.getPublishedPosts);
+  return posts.map((post) => ({
+    slug: post.slug,
+  }));
+}
+
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await fetchQuery(api.posts.getPostBySlug, { slug });
+
+  if (!post || !post.published) return {};
+
+  return constructMetadata({
+    title: `${post.title} | LOrdEnRYQuE Blog`,
+    description: post.excerpt,
+    image: post.image || "/og-image.png",
+    canonical: `/blog/${slug}`
+  });
+}
+
 interface BlogSlugPageProps {
   params: Promise<{ slug: string }>;
 }
@@ -25,7 +53,7 @@ export default async function BlogSlugPage({ params }: BlogSlugPageProps) {
 
   return (
     <article className="relative min-h-screen pb-24">
-      {/* Neural Background Background */}
+      {/* Page Background */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[10%] right-[10%] w-[50%] h-[50%] bg-accent-blue/5 rounded-full blur-[150px]" />
         <div className="absolute bottom-[20%] left-[5%] w-[40%] h-[40%] bg-accent-purple/5 rounded-full blur-[120px]" />
@@ -94,7 +122,7 @@ export default async function BlogSlugPage({ params }: BlogSlugPageProps) {
         {/* Footer Actions */}
         <footer className="mt-16 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-4">
-            <span className="text-sm font-bold text-foreground/40 uppercase tracking-widest">Share Neural Link:</span>
+            <span className="text-sm font-bold text-foreground/40 uppercase tracking-widest">Share this article:</span>
             <div className="flex gap-4">
               <button className="p-2 rounded-full bg-white/5 border border-white/10 hover:border-accent-blue hover:text-accent-blue transition-all">
                 <Share2 className="w-5 h-5" />

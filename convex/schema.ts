@@ -95,7 +95,9 @@ export default defineSchema({
     timeline: v.optional(v.string()),
     stack: v.optional(v.string()),
     status: v.string(),
-  }).index("by_email", ["email"]).index("by_status", ["status"]),
+    score: v.optional(v.number()), // 0-100 CRM score
+    notes: v.optional(v.string()), // Internal admin notes
+  }).index("by_email", ["email"]).index("by_status", ["status"]).index("by_score", ["score"]),
 
   siteConfig: defineTable({
     key: v.string(),
@@ -108,6 +110,7 @@ export default defineSchema({
     ext: v.string(),
     size: v.string(),
     url: v.string(),
+    altText: v.optional(v.string()),
   }).index("by_type", ["type"]),
 
   posts: defineTable({
@@ -118,6 +121,14 @@ export default defineSchema({
     image: v.optional(v.string()),
     published: v.boolean(),
     tags: v.string(), // JSON string
+    // SEO fields
+    seoTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    canonicalUrl: v.optional(v.string()),
+    ogImage: v.optional(v.string()),
+    isIndexed: v.optional(v.boolean()),
+    schemaType: v.optional(v.string()),
+    faqItems: v.optional(v.string()),
   }).index("by_slug", ["slug"]).index("by_published", ["published"]),
 
   portalMessages: defineTable({
@@ -140,6 +151,15 @@ export default defineSchema({
     liveUrl: v.optional(v.string()),
     githubUrl: v.optional(v.string()),
     status: v.string(),
+    // SEO fields
+    seoTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    canonicalUrl: v.optional(v.string()),
+    ogImage: v.optional(v.string()),
+    isIndexed: v.optional(v.boolean()),
+    schemaType: v.optional(v.string()),
+    faqItems: v.optional(v.string()),
+    imageAlt: v.optional(v.string()),
   }).index("by_slug", ["slug"]),
 
   pages: defineTable({
@@ -150,7 +170,61 @@ export default defineSchema({
     published: v.boolean(),
     inNavbar: v.boolean(),
     order: v.number(),
+    // SEO fields
+    seoTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    canonicalUrl: v.optional(v.string()),
+    ogImage: v.optional(v.string()),
+    isIndexed: v.optional(v.boolean()),
+    schemaType: v.optional(v.string()),
+    faqItems: v.optional(v.string()),
   }).index("by_slug", ["slug"]).index("by_published", ["published"]),
+
+  services: defineTable({
+    slug: v.string(),
+    title: v.string(),
+    h1: v.optional(v.string()),
+    intro: v.optional(v.string()),
+    content: v.string(),
+    coverImage: v.optional(v.string()),
+    imageAlt: v.optional(v.string()),
+    published: v.boolean(),
+    relatedProjects: v.optional(v.array(v.id("portfolioProjects"))),
+    // SEO fields
+    seoTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    canonicalUrl: v.optional(v.string()),
+    ogImage: v.optional(v.string()),
+    isIndexed: v.optional(v.boolean()),
+    schemaType: v.optional(v.string()),
+    faqItems: v.optional(v.string()),
+  }).index("by_slug", ["slug"]),
+
+  industries: defineTable({
+    slug: v.string(),
+    title: v.string(),
+    h1: v.optional(v.string()),
+    intro: v.optional(v.string()),
+    content: v.string(),
+    coverImage: v.optional(v.string()),
+    imageAlt: v.optional(v.string()),
+    published: v.boolean(),
+    relatedServices: v.optional(v.array(v.id("services"))),
+    // SEO fields
+    seoTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    canonicalUrl: v.optional(v.string()),
+    ogImage: v.optional(v.string()),
+    isIndexed: v.optional(v.boolean()),
+    schemaType: v.optional(v.string()),
+    faqItems: v.optional(v.string()),
+  }).index("by_slug", ["slug"]),
+
+  redirects: defineTable({
+    source: v.string(),
+    destination: v.string(),
+    permanent: v.boolean(),
+  }).index("by_source", ["source"]),
 
   tickets: defineTable({
     subject: v.string(),
@@ -207,4 +281,13 @@ export default defineSchema({
     attachments: v.optional(v.array(v.string())),
     metadata: v.optional(v.string()), // JSON string for lead data or reply info
   }).index("by_user", ["userId"]).index("by_folder", ["folder"]).index("by_status", ["status"]).index("by_thread", ["threadId"]),
+
+  notifications: defineTable({
+    title: v.string(),
+    message: v.string(),
+    type: v.string(), // "INFO" | "WARNING" | "SUCCESS" | "CRITICAL"
+    status: v.string(), // "UNREAD" | "READ"
+    userId: v.id("users"), // Target user (usually admin)
+    link: v.optional(v.string()), // Optional link to resource
+  }).index("by_user", ["userId"]).index("by_status", ["status"]),
 });

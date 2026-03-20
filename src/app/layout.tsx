@@ -15,7 +15,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = constructMetadata();
+export const metadata: Metadata = {
+  ...constructMetadata(),
+  manifest: "/manifest.json",
+};
 
 import { I18nProvider } from "@/lib/i18n";
 import NextAuthProvider from "@/components/providers/NextAuthProvider";

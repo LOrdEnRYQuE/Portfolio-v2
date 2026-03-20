@@ -38,6 +38,13 @@ export const create = mutation({
     image: v.optional(v.string()),
     published: v.optional(v.boolean()),
     tags: v.optional(v.string()),
+    seoTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    canonicalUrl: v.optional(v.string()),
+    ogImage: v.optional(v.string()),
+    isIndexed: v.optional(v.boolean()),
+    schemaType: v.optional(v.string()),
+    faqItems: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { published, tags, ...rest } = args;
@@ -66,6 +73,13 @@ export const update = mutation({
     image: v.optional(v.string()),
     published: v.optional(v.boolean()),
     tags: v.optional(v.string()),
+    seoTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    canonicalUrl: v.optional(v.string()),
+    ogImage: v.optional(v.string()),
+    isIndexed: v.optional(v.boolean()),
+    schemaType: v.optional(v.string()),
+    faqItems: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...data } = args;

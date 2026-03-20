@@ -2,75 +2,78 @@
 
 import { motion } from "framer-motion";
 import { Terminal, Palette, Bot, Code2, Database, BrainCircuit, MonitorSmartphone, Cpu, ChevronRight } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 
 export default function ExperienceTimeline() {
+  const { t } = useI18n();
+
   const experiences = [
     {
-      period: "2010 — 2017",
-      title: "IT Foundations & Web Development",
-      description: "Began building websites and learning web technologies through hands-on experimentation and independent projects. Worked extensively with early PHP-based CMS platforms and web systems.",
+      period: t("timeline.exp1.period"),
+      title: t("timeline.exp1.title"),
+      description: t("timeline.exp1.desc"),
       groups: [
-        { label: "Technologies", items: ["PHP", "MySQL", "HTML / CSS", "JavaScript"] },
-        { label: "CMS Platforms", items: ["PHP-Fusion", "WordPress", "Joomla"] },
+        { label: t("timeline.exp1.groups.label1"), items: ["PHP", "MySQL", "HTML / CSS", "JavaScript"] },
+        { label: t("timeline.exp1.groups.label2"), items: ["PHP-Fusion", "WordPress", "Joomla"] },
       ],
       activities: [
-        "Building and maintaining websites",
-        "Server setup and hosting environments",
-        "CMS customization and plugin integrations",
-        "Database configuration and management",
+        t("timeline.exp1.activities.a1"),
+        t("timeline.exp1.activities.a2"),
+        t("timeline.exp1.activities.a3"),
+        t("timeline.exp1.activities.a4"),
       ],
       icon: <Terminal className="text-accent" size={24} />,
       color: "border-accent text-accent",
       bg: "bg-accent/10",
-      summary: "This phase built a strong understanding of web architecture, hosting infrastructure, and backend logic.",
+      summary: t("timeline.exp1.summary"),
     },
     {
-      period: "2017 — 2023",
-      title: "Graphic Design & Digital Product Design",
-      description: "Expanded skills into visual design, branding, and digital media production to support web projects and digital products.",
+      period: t("timeline.exp2.period"),
+      title: t("timeline.exp2.title"),
+      description: t("timeline.exp2.desc"),
       groups: [
-        { label: "Tools Explored", items: ["Adobe Photoshop", "Illustrator", "Affinity Designer", "UI / UX Layout Design"] },
+        { label: t("timeline.exp2.groups.label1"), items: ["Adobe Photoshop", "Illustrator", "Affinity Designer", "UI / UX Layout Design"] },
       ],
       activities: [
-        "Website visual layouts",
-        "Brand identity design",
-        "Logo and marketing material creation",
-        "Digital graphics for online platforms",
-        "Social media and promotional visuals"
+        t("timeline.exp2.activities.a1"),
+        t("timeline.exp2.activities.a2"),
+        t("timeline.exp2.activities.a3"),
+        t("timeline.exp2.activities.a4"),
+        t("timeline.exp2.activities.a5"),
       ],
       icon: <Palette className="text-purple-400" size={24} />,
       color: "border-purple-400 text-purple-400",
       bg: "bg-purple-400/10",
-      summary: "This design experience strengthened the ability to bridge design and development, enabling the creation of visually polished digital products.",
+      summary: t("timeline.exp2.summary"),
     },
     {
-      period: "2023 — 2026",
-      title: "AI Engineering & Modern Development",
-      description: "Transitioned into modern development frameworks and artificial intelligence technologies, focusing on building intelligent software systems and AI-powered platforms.",
+      period: t("timeline.exp3.period"),
+      title: t("timeline.exp3.title"),
+      description: t("timeline.exp3.desc"),
       groups: [
-        { label: "Frameworks & Tech", items: ["TypeScript", "Node.js", "React", "Next.js"] },
-        { label: "AI & Automation", items: ["OpenAI APIs", "AI Agents", "Automation Workflows", "Prompt Engineering"] },
+        { label: t("timeline.exp3.groups.label1"), items: ["TypeScript", "Node.js", "React", "Next.js"] },
+        { label: t("timeline.exp3.groups.label2"), items: ["OpenAI APIs", "AI Agents", "Automation Workflows", "Prompt Engineering"] },
       ],
       activities: [
-        "AI-powered applications",
-        "Developer platforms and tools",
-        "SaaS web applications",
-        "Automation systems for businesses",
+        t("timeline.exp3.activities.a1"),
+        t("timeline.exp3.activities.a2"),
+        t("timeline.exp3.activities.a3"),
+        t("timeline.exp3.activities.a4"),
       ],
       icon: <Bot className="text-emerald-400" size={24} />,
       color: "border-emerald-400 text-emerald-400",
       bg: "bg-emerald-400/10",
-      summary: "This phase focuses on combining full-stack development with artificial intelligence to build next-generation digital products.",
+      summary: t("timeline.exp3.summary"),
     }
   ];
 
   const coreSkills = [
-    { title: "Web Development", skills: "PHP, JavaScript, TypeScript, HTML, CSS", icon: <Code2 className="text-accent" size={20} /> },
-    { title: "Frontend Development", skills: "React, Next.js, UI architecture, responsive design", icon: <MonitorSmartphone className="text-blue-400" size={20} /> },
-    { title: "Backend Development", skills: "Node.js, REST APIs, PostgreSQL, server infrastructure", icon: <Database className="text-purple-400" size={20} /> },
-    { title: "Artificial Intelligence", skills: "AI APIs, AI automation workflows, prompt engineering", icon: <BrainCircuit className="text-emerald-400" size={20} /> },
-    { title: "Design & Visuals", skills: "Graphic design, UI/UX layout design, brand visuals", icon: <Palette className="text-orange-400" size={20} /> }
+    { title: t("timeline.skill.web.title"), skills: t("timeline.skill.web.list"), icon: <Code2 className="text-accent" size={20} /> },
+    { title: t("timeline.skill.frontend.title"), skills: t("timeline.skill.frontend.list"), icon: <MonitorSmartphone className="text-blue-400" size={20} /> },
+    { title: t("timeline.skill.backend.title"), skills: t("timeline.skill.backend.list"), icon: <Database className="text-purple-400" size={20} /> },
+    { title: t("timeline.skill.ai.title"), skills: t("timeline.skill.ai.list"), icon: <BrainCircuit className="text-emerald-400" size={20} /> },
+    { title: t("timeline.skill.design.title"), skills: t("timeline.skill.design.list"), icon: <Palette className="text-orange-400" size={20} /> }
   ];
 
   return (
@@ -80,11 +83,11 @@ export default function ExperienceTimeline() {
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-purple-500/5 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="text-center space-y-6 mb-20">
-        <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-          Professional <span className="text-accent">Evolution</span>
-        </h2>
+        <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground" dangerouslySetInnerHTML={{ 
+          __html: t("timeline.title").replace("Evolution", `<span class="text-accent">Evolution</span>`) 
+        }} />
         <p className="text-text-secondary text-lg max-w-2xl mx-auto leading-relaxed">
-          From early IT infrastructure to modern AI engineering. A continuous journey of stacking complementary skills to build complete digital products.
+          {t("timeline.subtitle")}
         </p>
       </div>
 
@@ -142,7 +145,7 @@ export default function ExperienceTimeline() {
 
                     {/* Activities List */}
                     <div className="w-full bg-black/20 rounded-2xl p-5 border border-white/5">
-                      <h4 className="text-xs font-bold tracking-widest uppercase text-text-muted mb-4">Key Activities</h4>
+                      <h4 className="text-xs font-bold tracking-widest uppercase text-text-muted mb-4">{t("timeline.label.activities")}</h4>
                       <ul className={`space-y-3 ${isEven ? 'md:text-right' : 'text-left'}`}>
                         {exp.activities.map((act, aIdx) => (
                           <li key={aIdx} className={`flex items-start gap-3 ${isEven ? 'md:flex-row-reverse' : ''}`}>
@@ -173,21 +176,23 @@ export default function ExperienceTimeline() {
           className="lg:col-span-5 space-y-8"
         >
           <div className="space-y-4">
-            <h3 className="text-3xl font-bold text-foreground">Engineering <span className="text-accent">Philosophy</span></h3>
+            <h3 className="text-3xl font-bold text-foreground">
+              {t("timeline.philosophy.title").split(" ")[0]} <span className="text-accent">{t("timeline.philosophy.title").split(" ")[1]}</span>
+            </h3>
             <div className="w-12 h-1 bg-accent/50 rounded-full" />
           </div>
           <p className="text-text-secondary leading-relaxed text-lg">
-            &ldquo;Technology should serve a clear purpose: building reliable, scalable digital products that solve real problems.&rdquo;
+            &ldquo;{t("timeline.philosophy.quote")}&rdquo;
           </p>
           <p className="text-text-secondary leading-relaxed text-lg">
-            My work focuses on combining software engineering, design thinking, and artificial intelligence to create systems that are not only functional but also intuitive and efficient.
+            {t("timeline.philosophy.desc")}
           </p>
           <div className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
             <h4 className="font-bold text-foreground mb-2 flex items-center gap-2">
-              <Cpu className="text-accent" size={18} /> The Power Triangle
+              <Cpu className="text-accent" size={18} /> {t("timeline.philosophy.triangle.title")}
             </h4>
             <p className="text-sm text-text-muted leading-relaxed">
-              IT infrastructure → Web engineering → Design → AI systems. This unique stack enables the creation of complete digital products from concept to deployment.
+              {t("timeline.philosophy.triangle.desc")}
             </p>
           </div>
         </motion.div>
@@ -198,7 +203,7 @@ export default function ExperienceTimeline() {
           viewport={{ once: true }}
           className="lg:col-span-7"
         >
-          <h3 className="text-2xl font-bold text-foreground mb-8">Core Skill Areas</h3>
+          <h3 className="text-2xl font-bold text-foreground mb-8">{t("timeline.skills.title")}</h3>
           <div className="grid sm:grid-cols-2 gap-4">
             {coreSkills.map((skill, idx) => (
               <div key={idx} className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-colors group">

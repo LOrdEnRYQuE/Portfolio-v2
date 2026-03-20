@@ -2,10 +2,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { ConvexHttpClient } from "convex/browser";
+import { convex } from "@/lib/convex";
 import { api } from "@convex/_generated/api";
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL || process.env.CONVEX_URL || "https://jovial-ibex-866.eu-west-1.convex.cloud");
 
 export async function GET() {
   const session = await getServerSession(authOptions);
