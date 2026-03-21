@@ -9,5 +9,5 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  "minify": true
+  "minify": true,"env": {"production":{"name":"my"}}
 }
